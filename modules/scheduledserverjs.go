@@ -24,6 +24,7 @@ type SchedulerJSDefine struct {
 	DTSGInitData             DTSGInitData
 	DTSGInitialData          DTSGInitialData
 	CurrentUserInitialData   CurrentUserInitialData
+	LSPlatformMessengerSyncParams LSPlatformMessengerSyncParams
 }
 
 type SchedulerJSRequire struct {

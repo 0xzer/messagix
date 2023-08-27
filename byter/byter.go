@@ -2,6 +2,7 @@ package byter
 
 import (
 	"bytes"
+	"encoding/binary"
 	"reflect"
 )
 
@@ -15,6 +16,53 @@ var stringLengthTags = map[string]reflect.Kind{
 	"int16": reflect.Int16,
 	"int32": reflect.Int32,
 	"int64": reflect.Int64,
+}
+
+type EndianOps struct {
+	Read  endianReaderFunc
+	Write endianWriterFunc
+}
+
+type endianReaderFunc func([]byte) uint64
+type endianWriterFunc func(*bytes.Buffer, uint64) error
+
+var endianOperations = map[string]map[reflect.Kind]EndianOps{
+	"big": {
+		reflect.Uint8: {
+			Read:  func(b []byte) uint64 { return uint64(b[0]) },
+			Write: func(b *bytes.Buffer, val uint64) error { return b.WriteByte(byte(val)) },
+		},
+		reflect.Uint16: {
+			Read:  func(b []byte) uint64 { return uint64(binary.BigEndian.Uint16(b)) },
+			Write: func(b *bytes.Buffer, val uint64) error { return binary.Write(b, binary.BigEndian, uint16(val)) },
+		},
+		reflect.Uint32: {
+			Read:  func(b []byte) uint64 { return uint64(binary.BigEndian.Uint32(b)) },
+			Write: func(b *bytes.Buffer, val uint64) error { return binary.Write(b, binary.BigEndian, uint32(val)) },
+		},
+		reflect.Uint64: {
+			Read:  func(b []byte) uint64 { return binary.BigEndian.Uint64(b) },
+			Write: func(b *bytes.Buffer, val uint64) error { return binary.Write(b, binary.BigEndian, val) },
+		},
+	},
+	"little": {
+		reflect.Uint8: {
+			Read:  func(b []byte) uint64 { return uint64(b[0]) },
+			Write: func(b *bytes.Buffer, val uint64) error { return b.WriteByte(byte(val)) },
+		},
+		reflect.Uint16: {
+			Read:  func(b []byte) uint64 { return uint64(binary.LittleEndian.Uint16(b)) },
+			Write: func(b *bytes.Buffer, val uint64) error { return binary.Write(b, binary.LittleEndian, uint16(val)) },
+		},
+		reflect.Uint32: {
+			Read:  func(b []byte) uint64 { return uint64(binary.LittleEndian.Uint32(b)) },
+			Write: func(b *bytes.Buffer, val uint64) error { return binary.Write(b, binary.LittleEndian, uint32(val)) },
+		},
+		reflect.Uint64: {
+			Read:  func(b []byte) uint64 { return binary.LittleEndian.Uint64(b) },
+			Write: func(b *bytes.Buffer, val uint64) error { return binary.Write(b, binary.LittleEndian, val) },
+		},
+	},
 }
 
 type byter struct {

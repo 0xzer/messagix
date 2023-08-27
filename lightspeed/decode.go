@@ -23,6 +23,7 @@ func NewLightSpeedDecoder(dependencies map[string]string, table interface{}) *Li
 	}
 }
 
+// pass the LightSpeedData.Steps to this function
 func (ls *LightSpeedDecoder) Decode(data interface{}) interface{} {
 	s, ok := data.([]interface{})
 	if !ok {

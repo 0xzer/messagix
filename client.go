@@ -16,13 +16,17 @@ var USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, lik
 type EventHandler func(evt interface{})
 type Proxy func(*http.Request) (*url.URL, error)
 type Client struct {
+	Account *Account
+
+	Logger zerolog.Logger
+
 	http *http.Client
 	socket *Socket
 	taskManager *TaskManager
 	eventHandler EventHandler
+	graphQl *GraphQL
 	configs *Configs
 
-	Logger zerolog.Logger
 	cookies *types.Cookies
 	proxy Proxy
 }
@@ -51,7 +55,7 @@ func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Cli
 	socket := cli.NewSocketClient()
 	cli.socket = socket
 
-	cli.configs = &Configs{client: cli}
+	cli.configs = &Configs{client: cli, needSync: false}
 
 	moduleLoader := &ModuleParser{client: cli}
 	moduleLoader.load()
@@ -61,6 +65,8 @@ func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Cli
 	if configSetupErr != nil {
 		log.Fatal(configSetupErr)
 	}
+
+	cli.Account = &Account{client: cli}
 
 	taskManager := &TaskManager{client: cli, activeTaskIds: make([]int, 0), currTasks: make([]TaskData, 0)}
 	cli.taskManager = taskManager

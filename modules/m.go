@@ -14,14 +14,6 @@ import (
 var GraphQLData = &graphql.GraphQLTable{}
 var VersionId int64
 
-type lsSyncData struct {
-	Database          int    `json:"database,omitempty"`
-	EpochID           int    `json:"epoch_id,omitempty"`
-	LastAppliedCursor any    `json:"last_applied_cursor,omitempty"`
-	SyncParams        string `json:"sync_params,omitempty"`
-	Version           int64  `json:"version,omitempty"`
-}
-
 type EnvJSON struct {
 	UseTrustedTypes          bool   `json:"useTrustedTypes,omitempty"`
 	IsTrustedTypesReportOnly bool   `json:"isTrustedTypesReportOnly,omitempty"`
@@ -158,7 +150,7 @@ func handleRequire(modName string, data []interface{}) error {
 									continue
 								}
 								if len(reqData.Variables.RequestPayload) > 0 {
-									var syncData *lsSyncData
+									var syncData *graphql.LSPlatformGraphQLLightspeedVariables
 									err = json.Unmarshal([]byte(reqData.Variables.RequestPayload), &syncData)
 									if err != nil {
 										continue

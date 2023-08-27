@@ -51,7 +51,3 @@ func (p *PublishPacket) Decompress(packetByte byte) error {
 
 	return nil
 }
-
-type PublishACK struct {
-	PacketId uint16
-}

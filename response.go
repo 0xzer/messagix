@@ -2,17 +2,18 @@ package messagix
 
 import (
 	"fmt"
-	"log"
-
 	"github.com/0xzer/messagix/byter"
 	"github.com/0xzer/messagix/packets"
 )
 
-type ResponseData interface {}
+type ResponseData interface {
+	Finish() ResponseData
+}
 type responseHandler func() (ResponseData)
 var responseMap = map[uint8]responseHandler{
 	packets.CONNACK: func() ResponseData {return &Event_Ready{}},
-	packets.PUBACK: func() ResponseData {return &packets.PublishACK{}},
+	packets.PUBACK: func() ResponseData {return &Event_PublishACK{}},
+	packets.SUBACK: func() ResponseData {return &Event_SubscribeACK{}},
 }
 
 type Response struct {
@@ -22,7 +23,6 @@ type Response struct {
 }
 
 func (r *Response) Read(data []byte) error {
-	log.Println(data)
 	reader := byter.NewReader(data)
 	err := reader.ReadToStruct(r)
 	if err != nil {
@@ -30,7 +30,6 @@ func (r *Response) Read(data []byte) error {
 	}
 
 	packetType := r.PacketByte >> 4 // parse the packet type by the leftmost 4 bits
-	log.Println(packetType)
 	responseHandlerFunc, ok := responseMap[packetType]
 	if !ok {
 		return fmt.Errorf("could not find response func handler for packet type %d", packetType)

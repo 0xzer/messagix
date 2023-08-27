@@ -10,6 +10,8 @@ type Topic string
 const (
 	UNKNOWN_TOPIC Topic = "unknown"
 	APP_SETTINGS Topic = "/ls_app_settings"
+	FOREGROUND_STATE Topic = "/ls_foreground_state"
+	RESP Topic = "/ls_resp"
 )
 
 type AppSettingsPublish struct {

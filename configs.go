@@ -12,6 +12,7 @@ import (
 
 type Configs struct {
 	client *Client
+	needSync bool
 	mqttConfig *types.MQTTConfig
 	siteConfig *types.SiteConfig
 }
@@ -48,6 +49,7 @@ func (c *Configs) SetupConfigs() error {
 	}
 
 	c.siteConfig = &types.SiteConfig{
+		AccountId: schedulerJS.CurrentUserInitialData.AccountID,
 		Bitmap: bitmap,
 		CSRBitmap: csrBitmap,
 		HasteSessionId: schedulerJS.SiteData.Hsi,
@@ -66,9 +68,26 @@ func (c *Configs) SetupConfigs() error {
 		X_ASDB_ID: "129477", // hold off on this and check if it ever changes, if so we gotta load the js file and extract it from there
 	}
 
+	c.client.graphQl = &GraphQL{client: c.client, lsRequests: 0, graphQLRequests: 1}
+
+	if c.needSync {
+		lsData, err := c.client.graphQl.makeLSRequest(1, 0, 1)
+		if err != nil {
+			log.Fatalf("failed to sync lightspeed data: %e", err)
+		}
+
+		modules.SchedulerJSRequired.LSTable = lsData
+	}
+
 	c.client.Logger.Info().Any("value", c.siteConfig.Bitmap.CompressedStr).Msg("Loaded __dyn bitmap")
 	c.client.Logger.Info().Any("value", c.siteConfig.CSRBitmap.CompressedStr).Msg("Loaded __csr bitmap")
 	c.client.Logger.Info().Any("value", c.siteConfig.VersionId).Msg("Loaded versionId")
 	c.client.Logger.Info().Any("broker", c.mqttConfig.Broker).Msg("Configs successfully setup!")
+	c.client.Logger.Info().
+	Any("total_messages", len(modules.SchedulerJSRequired.LSTable.LSUpsertMessage)).
+	Any("total_threads", len(modules.SchedulerJSRequired.LSTable.LSDeleteThenInsertThread)).
+	Any("total_contacts", len(modules.SchedulerJSRequired.LSTable.LSVerifyContactRowExists)).
+	Msg("Account metadata stats")
+
 	return nil
 }

@@ -50,7 +50,9 @@ func (pb *PublishPayload) Write() ([]byte, error) {
 	return byter.NewWriter().WriteFromStruct(pb)
 }
 
-func (c *Client) NewPublishRequest(topic Topic, jsonData string, packetId uint16, packetByte byte) ([]byte, error) {
+func (c *Client) NewPublishRequest(topic Topic, jsonData string, packetByte byte) ([]byte, uint16, error) {
+	packetId := c.socket.packetHandler.packetsSent
+	c.socket.packetHandler.addPacketChannel(packetId)
 	payload := &PublishPayload{
 		Topic: topic,
 		PacketId: packetId,
@@ -60,5 +62,43 @@ func (c *Client) NewPublishRequest(topic Topic, jsonData string, packetId uint16
 	request := &Request{
 		PacketByte: packetByte,
 	}
-	return request.Write(payload)
+	reqBytes, err := request.Write(payload)
+	if err != nil {
+		c.socket.packetHandler.deletePacketDetails(packetId)
+		return nil, 0, err
+	}
+
+	return reqBytes, packetId, nil
+}
+
+type SubscribePayload struct {
+	PacketId uint16
+	Topic Topic `lengthType:"uint16"`
+	QoSLevel packets.QoS
+}
+
+func (sb *SubscribePayload) Write() ([]byte, error) {
+	return byter.NewWriter().WriteFromStruct(sb)
+}
+
+func (c *Client) NewSubscribeRequest(topic Topic, qos packets.QoS) ([]byte, uint16, error) {
+	packetByte := &packets.SubscribePacket{}
+	packetId := c.socket.packetHandler.packetsSent
+	c.socket.packetHandler.addPacketChannel(packetId)
+	payload := &SubscribePayload{
+		PacketId: packetId,
+		Topic: topic,
+		QoSLevel: qos,
+	}
+	
+	request := &Request{
+		PacketByte: packetByte.Compress(),
+	}
+	reqBytes, err := request.Write(payload)
+	if err != nil {
+		c.socket.packetHandler.deletePacketDetails(packetId)
+		return nil, 0, err
+	}
+
+	return reqBytes, packetId, nil
 }

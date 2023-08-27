@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 )
 
@@ -15,41 +14,23 @@ func NewReader(data []byte) *byter {
 	}
 }
 
-func (b *byter) readInteger(kind reflect.Kind, size int, endian string) uint64 {
+func (b *byter) readInteger(kind reflect.Kind, size int, endian string) (uint64, error) {
+	if endian == "" {
+		endian = "big"
+	}
 	buffer := make([]byte, size)
 	_, err := b.Buff.Read(buffer)
 	if err != nil {
-		log.Printf("Error reading integer: %v\n", err)
-		return 0
+		return 0, fmt.Errorf("error reading integer: %w", err)
 	}
 
-	if kind == reflect.Uint8 {
-		return uint64(buffer[0])
+	if funcs, exists := endianOperations[endian]; exists {
+		if ops, ok := funcs[kind]; ok {
+			return ops.Read(buffer), nil
+		}
 	}
 
-	switch endian {
-		case "big":
-			switch kind {
-			case reflect.Uint16:
-				return uint64(binary.BigEndian.Uint16(buffer))
-			case reflect.Uint32:
-				return uint64(binary.BigEndian.Uint32(buffer))
-			case reflect.Uint64:
-				return binary.BigEndian.Uint64(buffer)
-			}
-		case "little":
-			switch kind {
-			case reflect.Uint16:
-				return uint64(binary.LittleEndian.Uint16(buffer))
-			case reflect.Uint32:
-				return uint64(binary.LittleEndian.Uint32(buffer))
-			case reflect.Uint64:
-				return binary.LittleEndian.Uint64(buffer)
-			}
-	}
-
-	log.Printf("Unsupported endianness: %s\n", endian)
-	return 0
+	return 0, fmt.Errorf("unsupported kind or endianness")
 }
 
 func (b *byter) ReadToStruct(s interface{}) error {
@@ -83,10 +64,10 @@ func (b *byter) ReadToStruct(s interface{}) error {
 			} else {
 				size := int(field.Type().Size())
 				endianess := values.Type().Field(i).Tag.Get("endian")
-				if endianess == "" {
-					endianess = "big"
+				uintValue, err := b.readInteger(field.Kind(), size, endianess)
+				if err != nil {
+					return err
 				}
-				uintValue := b.readInteger(field.Kind(), size, endianess)
 				field.SetUint(uintValue)
 			}
 		case reflect.String:
@@ -119,7 +100,7 @@ func (b *byter) DecodeVLQ() (int, error) {
         }
         value += int(encodedByte&0x7F) * multiplier
         if multiplier > 2097152 {
-            return 0, errors.New("malformed remaining length")
+            return 0, errors.New("malformed vlq encoded data")
         }
         multiplier *= 128
         if (encodedByte & 0x80) == 0 {

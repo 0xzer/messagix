@@ -26,3 +26,9 @@ type USIDMetadata struct {
 type MessengerWebRegion struct {
 	Region string `json:"regionNullable,omitempty"`
 }
+
+type LSPlatformMessengerSyncParams struct {
+	Mailbox string `json:"mailbox,omitempty"`
+	Contact string `json:"contact,omitempty"`
+	E2Ee    string `json:"e2ee,omitempty"`
+}

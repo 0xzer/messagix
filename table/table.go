@@ -2,6 +2,7 @@ package table
 
 /*
 	Unknown fields = I don't know what type it is supposed to be, because I only see 9 which is undefined
+	Trial and error works ^ check console for failed conversation within the decoder
 */
 
 type LSTable struct {

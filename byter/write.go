@@ -2,7 +2,6 @@ package byter
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 	"log"
 	"reflect"
@@ -15,37 +14,18 @@ func NewWriter() *byter {
 }
 
 func (b *byter) writeInteger(value uint64, kind reflect.Kind, endian string) error {
-	if kind == reflect.Uint8 {
-		return b.Buff.WriteByte(byte(value))
-	}
-
+	// Default to big endian if not specified
 	if endian == "" {
 		endian = "big"
 	}
-	switch endian {
-		case "big":
-			switch kind {
-			case reflect.Uint16:
-				return binary.Write(b.Buff, binary.BigEndian, uint16(value))
-			case reflect.Uint32:
-				return binary.Write(b.Buff, binary.BigEndian, uint32(value))
-			case reflect.Uint64:
-				return binary.Write(b.Buff, binary.BigEndian, value)
-			}
-		case "little":
-			switch kind {
-			case reflect.Uint16:
-				return binary.Write(b.Buff, binary.LittleEndian, uint16(value))
-			case reflect.Uint32:
-				return binary.Write(b.Buff, binary.LittleEndian, uint32(value))
-			case reflect.Uint64:
-				return binary.Write(b.Buff, binary.LittleEndian, value)
-			}
-		default:
-			return fmt.Errorf("received unsupported endianness while trying to write %v: %s", kind, endian)
+
+	if funcs, exists := endianOperations[endian]; exists {
+		if ops, ok := funcs[kind]; ok {
+			return ops.Write(b.Buff, value)
+		}
 	}
 
-	return nil
+	return fmt.Errorf("unsupported kind or endianness")
 }
 
 func (b *byter) WriteFromStruct(s interface{}) ([]byte, error) {
@@ -58,6 +38,10 @@ func (b *byter) WriteFromStruct(s interface{}) ([]byte, error) {
 
 	for i := 0; i < values.NumField(); i++ {
 		field := values.Field(i)
+		shouldSkip := values.Type().Field(i).Tag.Get("skip")
+		if shouldSkip == "1" {
+			continue
+		}
 		switch field.Kind() {
 		case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			if b.isEnum(field) {

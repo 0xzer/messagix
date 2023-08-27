@@ -35,7 +35,6 @@ func (c *Client) MakeRequest(url string, method string, headers http.Header, pay
 }
 
 // 129477
-// 129477
 func (c *Client) buildHeaders() http.Header {
 	w, _ := c.cookies.GetViewports()
 
