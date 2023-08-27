@@ -1,7 +1,5 @@
 package messagix
 
-import "net/http"
-
 type GraphQLPayload struct {
 	Av                   string `json:"av,omitempty"` // not required
 	User                 string `json:"__user,omitempty"` // not required
@@ -27,11 +25,4 @@ type GraphQLPayload struct {
 	Variables            string `json:"variables,omitempty"`
 	ServerTimestamps     string `json:"server_timestamps,omitempty"` // "true" or "false"
 	DocID                string `json:"doc_id,omitempty"`
-}
-
-func (c *Client) getGraphQLHeaders() http.Header {
-	h := http.Header{}
-	h.Add("user-agent", USER_AGENT)
-	
-	return h
 }

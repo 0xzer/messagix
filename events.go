@@ -1,21 +1,38 @@
 package messagix
 
-import "log"
+import (
+	"log"
+	"os"
+
+	"github.com/0xzer/messagix/packets"
+)
 
 func (s *Socket) handleBinaryMessage(data []byte) {
-	s.client.Logger.Debug().Hex("data", data).Msg("Received BinaryMessage")
+	s.client.Logger.Debug().Hex("hex-data", data).Bytes("bytes", data).Any("str", string(data)).Msg("Received BinaryMessage")
 	if s.client.eventHandler == nil {
 		return
 	}
 
 	resp := &Response{}
 	err := resp.Read(data)
-	log.Println(resp)
+	//log.Println(resp)
 	if err != nil {
 		s.handleErrorEvent(err)
 	} else {
-		s.client.eventHandler(resp.ResponseData)
+		switch evt := resp.ResponseData.(type) {
+		case *packets.PublishACK:
+			s.handlePublishACK(int16(evt.PacketId))
+			os.Exit(1)
+		default:
+			log.Println(resp.ResponseData)
+			s.client.eventHandler(resp.ResponseData)
+		}
 	}
+}
+
+func (s *Socket) handlePublishACK(packetId int16) {
+	log.Println("packetid:",packetId)
+	os.Exit(1)
 }
 
 func (s *Socket) handleErrorEvent(err error) {

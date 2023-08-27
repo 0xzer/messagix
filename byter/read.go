@@ -61,6 +61,9 @@ func (b *byter) ReadToStruct(s interface{}) error {
 	}
 
 	for i := 0; i < values.NumField(); i++ {
+		if b.Buff.Len() <= 0 {
+			return nil
+		}
 		field := values.Field(i)
 		if !field.CanSet() {
 			continue
@@ -80,6 +83,9 @@ func (b *byter) ReadToStruct(s interface{}) error {
 			} else {
 				size := int(field.Type().Size())
 				endianess := values.Type().Field(i).Tag.Get("endian")
+				if endianess == "" {
+					endianess = "big"
+				}
 				uintValue := b.readInteger(field.Kind(), size, endianess)
 				field.SetUint(uintValue)
 			}

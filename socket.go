@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-
 	"github.com/0xzer/messagix/packets"
 	"github.com/gorilla/websocket"
 )
@@ -20,13 +19,15 @@ type Socket struct {
 
 	packetsSent uint16
 
+	packetIdHandler map[uint16]*packets.PublishACK
 	topics []Topic
 }
 
 func (c *Client) NewSocketClient() *Socket {
 	return &Socket{
 		client: c,
-		packetsSent: 0,
+		packetsSent: 1,
+		packetIdHandler: make(map[uint16]*packets.PublishACK, 0),
 	}
 }
 
@@ -39,8 +40,13 @@ func (s *Socket) Connect() error {
 	headers := s.getConnHeaders()
 	brokerUrl := s.client.configs.mqttConfig.BuildBrokerUrl()
 
+	dialer := websocket.Dialer{}
+	if s.client.proxy != nil {
+		dialer.Proxy = s.client.proxy
+	}
+
 	s.client.Logger.Debug().Any("broker", brokerUrl).Msg("Dialing socket")
-	conn, _, err := websocket.DefaultDialer.Dial(brokerUrl, headers)
+	conn, _, err := dialer.Dial(brokerUrl, headers)
 	if err != nil {
 		return fmt.Errorf("failed to dial socket: %s", err.Error())
 	}
@@ -56,7 +62,7 @@ func (s *Socket) Connect() error {
 
 	go s.beginReadStream()
 
-	appSettingPublishJSON, err := s.newAppSettingsPublishJSON()
+	appSettingPublishJSON, err := s.newAppSettingsPublishJSON(s.client.configs.siteConfig.VersionId)
 	if err != nil {
 		return err
 	}
@@ -65,7 +71,7 @@ func (s *Socket) Connect() error {
 		QOSLevel: packets.QOS_LEVEL_1,
 	}
 
-	appSettingPublishPayload, err := s.client.NewPublishRequest(APP_SETTINGS, appSettingPublishJSON, s.packetsSent+1, publishPacketByte.Compress())
+	appSettingPublishPayload, err := s.client.NewPublishRequest(APP_SETTINGS, appSettingPublishJSON, s.packetsSent, publishPacketByte.Compress())
 	if err != nil {
 		return err
 	}
@@ -74,6 +80,7 @@ func (s *Socket) Connect() error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -99,7 +106,7 @@ func (s *Socket) sendData(data []byte) error {
 
 	packetType := data[0] >> 4
 	if packetType == packets.PUBLISH {
-		s.packetsSent += 1
+		s.packetsSent++
 	}
 	
 	err := s.conn.WriteMessage(websocket.BinaryMessage, data)
@@ -108,6 +115,7 @@ func (s *Socket) sendData(data []byte) error {
 		s.handleErrorEvent(e)
 		return e
     }
+
     return nil
 }
 

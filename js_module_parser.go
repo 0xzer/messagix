@@ -1,11 +1,15 @@
 package messagix
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"strings"
+
 	"github.com/0xzer/messagix/modules"
+	"github.com/0xzer/messagix/types"
 	"golang.org/x/net/html"
 )
 
@@ -18,11 +22,31 @@ type ScriptTag struct {
 	Content    string
 }
 
-type ModuleParser struct {}
+type ModuleParser struct {
+	client *Client
+}
+
+func (m *ModuleParser) fetchMainSite() []byte { // just log.fatal if theres an error because the library should not be able to continue then
+	headers := m.client.buildHeaders()
+	headers.Add("connection", "keep-alive")
+	headers.Add("host", "www.facebook.com")
+	headers.Add("sec-fetch-dest", "document")
+	headers.Add("sec-fetch-mode", "navigate")
+	headers.Add("sec-fetch-site", "none") // header is required, otherwise they dont send the csr bitmap data in the response. lets also include the other headers to be sure
+	headers.Add("sec-fetch-user", "?1")
+	headers.Add("upgrade-insecure-requests", "1")
+	_, responseBody, err := m.client.MakeRequest("https://www.facebook.com/messages", "GET", headers, nil, types.NONE)
+	if err != nil {
+		log.Fatalf(fmt.Sprintf("failed to fetch main messages site: %e", err))
+	}
+
+	return responseBody
+}
 
 func (m *ModuleParser) load() {
-	docStr, _ := os.ReadFile("res.html")
-	doc, err := html.Parse(strings.NewReader(string(docStr)))
+	htmlData := m.fetchMainSite()
+	os.WriteFile("res.html", htmlData, os.ModePerm)
+	doc, err := html.Parse(bytes.NewReader(htmlData))
 	if err != nil {
 		log.Fatalf("failed to parse doc string: %e", err)
 	}

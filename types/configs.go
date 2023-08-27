@@ -91,4 +91,5 @@ type SiteConfig struct {
 	HasteSession string
 	ConnectionClass string
 	VersionId int64
+	X_ASDB_ID string
 }

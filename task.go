@@ -4,6 +4,10 @@ import (
 	"github.com/0xzer/messagix/methods"
 )
 
+var labels = map[string]string{
+	"GetContactsTask": "452",
+}
+
 type TaskData struct {
 	FailureCount interface{} `json:"failure_count,omitempty"`
 	Label string `json:"label,omitempty"`
@@ -66,7 +70,7 @@ type GetContactsTask struct {
 }
 
 func (t *GetContactsTask) getLabel() string {
-	return "452"
+	return labels["GetContactsTask"]
 }
 
 func (t *GetContactsTask) create() (interface{}, interface{}) {

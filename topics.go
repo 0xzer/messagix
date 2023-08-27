@@ -1,6 +1,9 @@
 package messagix
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strconv"
+)
 
 type Topic string
 
@@ -11,13 +14,13 @@ const (
 
 type AppSettingsPublish struct {
 	LsFdid string `json:"ls_fdid"`
-	SchemaVersion   string `json:"ls_sv"` /* unsure if this is language-code based (but it is 6512074225573706 all the time)*/
+	SchemaVersion   string `json:"ls_sv"`
 }
 
-func (s *Socket) newAppSettingsPublishJSON() (string, error) {
+func (s *Socket) newAppSettingsPublishJSON(versionId int64) (string, error) {
 	payload := &AppSettingsPublish{
 		LsFdid: "",
-		SchemaVersion: "6512074225573706",
+		SchemaVersion: strconv.Itoa(int(versionId)),
 	}
 
 	jsonData, err := json.Marshal(payload)

@@ -18,6 +18,11 @@ type Cookies struct {
 	Presence string `json:"presence,omitempty"`
 }
 
+func (c *Cookies) GetViewports() (string, string) {
+	pxs := strings.Split(c.Wd, "x")
+	return pxs[0], pxs[1]
+}
+
 func (c *Cookies) ToString() string {
 	s := ""
 	values := reflect.ValueOf(*c)

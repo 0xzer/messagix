@@ -10,7 +10,7 @@ type Connect struct {
 	ClientCapabilities int    `json:"cp"` // mqttconfig clientCapabilities (3)
 	Capabilities         int    `json:"ecp"` // mqttconfig capabilities (10)
 	ChatOn      bool   `json:"chat_on"` // mqttconfig chatVisibility (true) - not 100% sure
-	Fg          bool   `json:"fg"`
+	Fg          bool   `json:"fg"` // idk what this is
 	Cid   string `json:"d"` // cid from html content
     ConnectionType  string `json:"ct"` // connection type? websocket
 	MqttSid     string `json:"mqtt_sid"` // ""
@@ -34,7 +34,7 @@ func (s *Socket) newConnectJSON() (string, error) {
 		ClientCapabilities: s.client.configs.mqttConfig.ClientCapabilities,
 		Capabilities: s.client.configs.mqttConfig.Capabilities,
 		ChatOn: s.client.configs.mqttConfig.ChatOn,
-		Fg: true,
+		Fg: false,
 		ConnectionType: s.client.configs.mqttConfig.ConnectionType,
 		MqttSid: "",
 		AppId: s.client.configs.mqttConfig.AppId,

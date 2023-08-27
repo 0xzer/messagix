@@ -3,6 +3,7 @@ package messagix
 import (
 	"log"
 	"strconv"
+
 	"github.com/0xzer/messagix/crypto"
 	"github.com/0xzer/messagix/methods"
 	"github.com/0xzer/messagix/modules"
@@ -62,7 +63,12 @@ func (c *Configs) SetupConfigs() error {
 		HasteSession: schedulerJS.SiteData.HasteSession,
 		ConnectionClass: schedulerJS.WebConnectionClassServerGuess.ConnectionClass,
 		VersionId: modules.VersionId,
+		X_ASDB_ID: "129477", // hold off on this and check if it ever changes, if so we gotta load the js file and extract it from there
 	}
 
+	c.client.Logger.Info().Any("value", c.siteConfig.Bitmap.CompressedStr).Msg("Loaded __dyn bitmap")
+	c.client.Logger.Info().Any("value", c.siteConfig.CSRBitmap.CompressedStr).Msg("Loaded __csr bitmap")
+	c.client.Logger.Info().Any("value", c.siteConfig.VersionId).Msg("Loaded versionId")
+	c.client.Logger.Info().Any("broker", c.mqttConfig.Broker).Msg("Configs successfully setup!")
 	return nil
 }

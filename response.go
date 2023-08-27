@@ -12,6 +12,7 @@ type ResponseData interface {}
 type responseHandler func() (ResponseData)
 var responseMap = map[uint8]responseHandler{
 	packets.CONNACK: func() ResponseData {return &Event_Ready{}},
+	packets.PUBACK: func() ResponseData {return &packets.PublishACK{}},
 }
 
 type Response struct {
@@ -29,6 +30,7 @@ func (r *Response) Read(data []byte) error {
 	}
 
 	packetType := r.PacketByte >> 4 // parse the packet type by the leftmost 4 bits
+	log.Println(packetType)
 	responseHandlerFunc, ok := responseMap[packetType]
 	if !ok {
 		return fmt.Errorf("could not find response func handler for packet type %d", packetType)

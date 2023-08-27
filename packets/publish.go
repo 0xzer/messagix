@@ -52,38 +52,6 @@ func (p *PublishPacket) Decompress(packetByte byte) error {
 	return nil
 }
 
-type PubACKPacket struct {
-	packetType    uint8 // packet type (PUBACK)
-	packetID uint16 // The Packet Identifier
-}
-
-func (p *PubACKPacket) Compress() byte {return 0}
-
-func (p *PubACKPacket) GetPacketType() uint8 {
-	return p.packetType
-}
-
-// As PUBACK only consists of its type and packet ID, 
-// we don't have a "Compress" like with PUBLISH.
-func (p *PubACKPacket) ToBytes() []byte {
-	return []byte{
-		PUBACK << 4,
-		byte(p.packetID >> 8),
-		byte(p.packetID & 0xFF),
-	}
-}
-
-// I doubt this will ever be used, but it might be.
-func (p *PubACKPacket) Decompress(data []byte) error {
-	if len(data) != 3 {
-		return fmt.Errorf("invalid PUBACK packet length")
-	}
-
-	p.packetType = data[0] >> 4
-	if p.packetType != PUBACK {
-		return fmt.Errorf("expected PUBACK packet type but got %d", p.packetType)
-	}
-
-	p.packetID = uint16(data[1])<<8 | uint16(data[2])
-	return nil
+type PublishACK struct {
+	PacketId uint16
 }
