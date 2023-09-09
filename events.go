@@ -1,7 +1,11 @@
 package messagix
 
 import (
+	"encoding/json"
+	"log"
+	"github.com/0xzer/messagix/lightspeed"
 	"github.com/0xzer/messagix/modules"
+	"github.com/0xzer/messagix/packets"
 	"github.com/0xzer/messagix/table"
 )
 
@@ -17,28 +21,80 @@ func (s *Socket) handleBinaryMessage(data []byte) {
 		s.handleErrorEvent(err)
 	} else {
 		switch evt := resp.ResponseData.(type) {
+		case *Event_PublishResponse:
+			s.handlePublishResponseEvent(evt)
 		case *Event_PublishACK, *Event_SubscribeACK:
 			s.handleACKEvent(evt.(AckEvent))
+		case *Event_Ready:
+			go s.handleReadyEvent(evt)
 		default:
 			s.client.eventHandler(resp.ResponseData.Finish())
 		}
 	}
 }
 
-func (s *Socket) handleACKEvent(ackData AckEvent) {
-	packetId := ackData.GetPacketId()
-	err := s.packetHandler.updatePacketChannel(uint16(packetId), ackData)
+func (s *Socket) handleReadyEvent(data *Event_Ready) {
+	appSettingPublishJSON, err := s.newAppSettingsPublishJSON(s.client.configs.siteConfig.VersionId)
 	if err != nil {
-		s.client.Logger.Info().Any("data", ackData).Any("packetId", packetId).Msg(err.Error())
-		return
+		log.Fatal(err)
 	}
 
-	s.client.Logger.Info().Any("data", ackData).Any("packetId", packetId).Msg("Updated packet channel!")
+	packetId, err := s.sendPublishPacket(LS_APP_SETTINGS, appSettingPublishJSON, &packets.PublishPacket{QOSLevel: packets.QOS_LEVEL_1}, s.SafePacketId())
+	if err != nil {
+		log.Fatalf("failed to send APP_SETTINGS publish packet: %e", err)
+	}
+
+	appSettingAck := s.responseHandler.waitForPubACKDetails(packetId)
+	if appSettingAck == nil {
+		log.Fatalf("failed to get pubAck for packetId: %d", appSettingAck.PacketId)
+	}
+
+	_, err = s.sendSubscribePacket(LS_FOREGROUND_STATE, packets.QOS_LEVEL_0, true)
+	if err != nil {
+		log.Fatalf("failed to subscribe to ls_foreground_state: %e", err)
+	}
+
+	_, err = s.sendSubscribePacket(LS_RESP, packets.QOS_LEVEL_0, true)
+	if err != nil {
+		log.Fatalf("failed to subscribe to ls_resp: %e", err)
+	}
+
+	s.client.eventHandler(data.Finish())
+}
+
+func (s *Socket) handleACKEvent(ackData AckEvent) {
+	packetId := ackData.GetPacketId()
+	err := s.responseHandler.updatePacketChannel(uint16(packetId), ackData)
+	if err != nil {
+		s.client.Logger.Err(err).Any("data", ackData).Any("packetId", packetId).Msg("failed to handle ack event")
+		return
+	}
 }
 
 func (s *Socket) handleErrorEvent(err error) {
 	errEvent := &Event_Error{Err: err}
 	s.client.eventHandler(errEvent)
+}
+
+func (s *Socket) handlePublishResponseEvent(resp *Event_PublishResponse) {
+	s.client.Logger.Info().Any("requestId", resp.Data.RequestID).Msg("Got publish response event...")
+	packetId := resp.Data.RequestID
+	hasPacket := s.responseHandler.hasPacket(uint16(packetId))
+
+	switch resp.Topic {
+		case string(LS_RESP):
+			if hasPacket {
+				err := s.responseHandler.updateRequestChannel(uint16(packetId), resp.Finish())
+				if err != nil {
+					s.handleErrorEvent(err)
+					return
+				}
+			} else {
+				s.client.Logger.Info().Any("packetId", packetId).Any("data", resp).Msg("Got publish response but was not expecting it for specific packet identifier.")
+			}
+		default:
+			s.client.Logger.Info().Any("packetId", packetId).Any("topic", resp.Topic).Any("data", resp.Data).Msg("Got unknown publish response topic!")
+	}
 }
 
 // Event_Ready represents the CONNACK packet's response.
@@ -109,5 +165,35 @@ func (pb *Event_SubscribeACK) GetPacketId() uint16 {
 }
 
 func (pb *Event_SubscribeACK) Finish() ResponseData {
+	return pb
+}
+
+// Event_PublishResponse is never emitted, instead we will convert this into seperate events
+// It will also be used for handling the responses after calling a function like GetContacts through the requestId
+type Event_PublishResponse struct {
+	Topic string `lengthType:"uint16" endian:"big"`
+	Data PublishResponseData `jsonString:"1"`
+	Table table.LSTable
+}
+
+type PublishResponseData struct {
+	RequestID int64 `json:"request_id,omitempty"`
+	Payload   string `json:"payload,omitempty"`
+	Sp     []string `json:"sp,omitempty"` // dependencies
+	Target int      `json:"target,omitempty"`
+}
+
+func (pb *Event_PublishResponse) Finish() ResponseData {
+	pb.Table = table.LSTable{}
+	var lsData *lightspeed.LightSpeedData
+	err := json.Unmarshal([]byte(pb.Data.Payload), &lsData)
+	if err != nil {
+		log.Println("failed to unmarshal PublishResponseData JSON payload into lightspeed.LightSpeedData struct: %e", err)
+		return pb
+	}
+
+	dependencies := table.SPToDepMap(pb.Data.Sp)
+	decoder := lightspeed.NewLightSpeedDecoder(dependencies, &pb.Table)
+	decoder.Decode(lsData.Steps)
 	return pb
 }

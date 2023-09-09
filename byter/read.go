@@ -2,7 +2,7 @@ package byter
 
 import (
 	"bytes"
-	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -49,12 +49,14 @@ func (b *byter) ReadToStruct(s interface{}) error {
 		if !field.CanSet() {
 			continue
 		}
+
+		tags := values.Type().Field(i).Tag
 		switch field.Kind() {
 		case reflect.Bool:
 			boolByte := b.Buff.Next(1)
 			field.SetBool(boolByte[0] != 0)			
 		case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			hasVLQTag := values.Type().Field(i).Tag.Get("vlq")
+			hasVLQTag := tags.Get("vlq")
 			if hasVLQTag != "" {
 				uintValue, err := b.DecodeVLQ()
 				if err != nil {
@@ -63,7 +65,7 @@ func (b *byter) ReadToStruct(s interface{}) error {
 				field.SetUint(uint64(uintValue))
 			} else {
 				size := int(field.Type().Size())
-				endianess := values.Type().Field(i).Tag.Get("endian")
+				endianess := tags.Get("endian")
 				uintValue, err := b.readInteger(field.Kind(), size, endianess)
 				if err != nil {
 					return err
@@ -71,13 +73,24 @@ func (b *byter) ReadToStruct(s interface{}) error {
 				field.SetUint(uintValue)
 			}
 		case reflect.String:
-			strLen, _ := binary.ReadUvarint(b.Buff)
-			data := make([]byte, strLen)
-			b.Buff.Read(data)
+			lengthType := tags.Get("lengthType")
+			data, err := b.readString(lengthType, tags.Get("endian"))
+			if err != nil {
+				return err
+			}
 			field.SetString(string(data))
 		case reflect.Interface:
 			if field.IsNil() {
 				continue
+			}
+		case reflect.Struct:
+			jsonString := tags.Get("jsonString")
+			if jsonString != "" {
+				jsonData := b.Buff.Next(b.Buff.Len())
+				err := json.Unmarshal(jsonData, field.Addr().Interface())
+				if err != nil {
+					return fmt.Errorf("failed to unmarshal JSON for field %s: %v", values.Type().Field(i).Name, err)
+				}
 			}
 		default:
 			return fmt.Errorf("unsupported type %s for field %s", field.Type(), values.Type().Field(i).Name)
@@ -85,6 +98,36 @@ func (b *byter) ReadToStruct(s interface{}) error {
 	}
 
 	return nil
+}
+
+
+func (b *byter) readString(lengthType string, endianess string) (string, error) {
+	if endianess == "" {
+		endianess = "big"
+	}
+
+	size, exists := stringLengthSizes[lengthType]
+	if !exists {
+		return "", fmt.Errorf("invalid lengthType: %s", lengthType)
+	}
+
+	kind, exists := stringLengthTags[lengthType]
+	if !exists {
+		return "", fmt.Errorf("invalid lengthType: %s", lengthType)
+	}
+
+	strLength, err := b.readInteger(kind, size, endianess) // Now, `size` is an integer value.
+	if err != nil {
+		return "", err
+	}
+
+	strBytes := make([]byte, strLength)
+	_, err = b.Buff.Read(strBytes)
+	if err != nil {
+		return "", err
+	}
+
+	return string(strBytes), nil
 }
 
 func (b *byter) DecodeVLQ() (int, error) {

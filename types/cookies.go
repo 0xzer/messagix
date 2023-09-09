@@ -20,6 +20,9 @@ type Cookies struct {
 
 func (c *Cookies) GetViewports() (string, string) {
 	pxs := strings.Split(c.Wd, "x")
+	if len(pxs) != 2 {
+		return "812", "1114"
+	}
 	return pxs[0], pxs[1]
 }
 
@@ -85,7 +88,7 @@ func NewCookiesFromString(cookieStr string) *Cookies {
 
 func extractCookieValue(cookieString, key string) string {
 	startIndex := strings.Index(cookieString, key)
-	if startIndex == -1 {
+	if startIndex < 0 {
 		return ""
 	}
 

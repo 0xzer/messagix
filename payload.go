@@ -42,7 +42,7 @@ func (c *Client) NewConnectRequest(jsonData string, connectFlags uint8) ([]byte,
 type PublishPayload struct {
 	Topic Topic `lengthType:"uint16"`
 	PacketId uint16
-	JSONData string `lengthType:"uint16"`
+	JSONData string `lengthType:""`
 }
 
 
@@ -50,24 +50,25 @@ func (pb *PublishPayload) Write() ([]byte, error) {
 	return byter.NewWriter().WriteFromStruct(pb)
 }
 
-func (c *Client) NewPublishRequest(topic Topic, jsonData string, packetByte byte) ([]byte, uint16, error) {
-	packetId := c.socket.packetHandler.packetsSent
-	c.socket.packetHandler.addPacketChannel(packetId)
+func (c *Client) NewPublishRequest(topic Topic, jsonData string, packetByte byte, packetId uint16) ([]byte, uint16, error) {
 	payload := &PublishPayload{
 		Topic: topic,
 		PacketId: packetId,
 		JSONData: jsonData,
 	}
 	
+	c.socket.responseHandler.addPacketChannel(packetId)
+	c.socket.responseHandler.addRequestChannel(packetId)
+
 	request := &Request{
 		PacketByte: packetByte,
 	}
 	reqBytes, err := request.Write(payload)
 	if err != nil {
-		c.socket.packetHandler.deletePacketDetails(packetId)
+		c.socket.responseHandler.deleteDetails(packetId, PacketChannel)
+		c.socket.responseHandler.deleteDetails(packetId, RequestChannel)
 		return nil, 0, err
 	}
-
 	return reqBytes, packetId, nil
 }
 
@@ -83,8 +84,8 @@ func (sb *SubscribePayload) Write() ([]byte, error) {
 
 func (c *Client) NewSubscribeRequest(topic Topic, qos packets.QoS) ([]byte, uint16, error) {
 	packetByte := &packets.SubscribePacket{}
-	packetId := c.socket.packetHandler.packetsSent
-	c.socket.packetHandler.addPacketChannel(packetId)
+	packetId := c.socket.SafePacketId()
+	c.socket.responseHandler.addPacketChannel(packetId)
 	payload := &SubscribePayload{
 		PacketId: packetId,
 		Topic: topic,
@@ -96,7 +97,7 @@ func (c *Client) NewSubscribeRequest(topic Topic, qos packets.QoS) ([]byte, uint
 	}
 	reqBytes, err := request.Write(payload)
 	if err != nil {
-		c.socket.packetHandler.deletePacketDetails(packetId)
+		c.socket.responseHandler.deleteDetails(packetId, PacketChannel)
 		return nil, 0, err
 	}
 

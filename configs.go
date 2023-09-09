@@ -69,7 +69,6 @@ func (c *Configs) SetupConfigs() error {
 	}
 
 	c.client.graphQl = &GraphQL{client: c.client, lsRequests: 0, graphQLRequests: 1}
-
 	if c.needSync {
 		lsData, err := c.client.graphQl.makeLSRequest(1, 0, 1)
 		if err != nil {

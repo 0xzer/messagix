@@ -1,11 +1,15 @@
 package messagix
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"sync"
 	"time"
 
+	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/packets"
 	"github.com/gorilla/websocket"
 )
@@ -18,18 +22,22 @@ var (
 type Socket struct {
 	client *Client
 	conn *websocket.Conn
-	packetHandler *PacketHandler
-	topics []Topic
+	responseHandler *ResponseHandler
+	mu *sync.Mutex
+    packetsSent uint16
 }
 
 func (c *Client) NewSocketClient() *Socket {
 	return &Socket{
 		client: c,
-		packetHandler: &PacketHandler{
-			packetsSent: 1, // starts at 1
+		responseHandler: &ResponseHandler{
+			client: c,
+			requestChannels: make(map[uint16]chan interface{}, 0),
 			packetChannels: make(map[uint16]chan interface{}, 0),
 			packetTimeout: time.Second * 10, // 10 sec timeout if puback is not received
 		},
+		mu: &sync.Mutex{},
+		packetsSent: 0,
 	}
 }
 
@@ -63,34 +71,6 @@ func (s *Socket) Connect() error {
     }
 
 	go s.beginReadStream()
-
-	appSettingPublishJSON, err := s.newAppSettingsPublishJSON(s.client.configs.siteConfig.VersionId)
-	if err != nil {
-		return err
-	}
-
-	packetId, err := s.sendPublishPacket(APP_SETTINGS, appSettingPublishJSON, &packets.PublishPacket{QOSLevel: packets.QOS_LEVEL_1})
-	if err != nil {
-		return fmt.Errorf("failed to send APP_SETTINGS publish packet: %e", err)
-	}
-
-	appSettingAck := s.packetHandler.waitForPubACKDetails(packetId)
-	if appSettingAck == nil {
-		// log.Fatal because if this is never received then why would the other packets work
-		// unless later on add some sort of retry-send-packet mechanism
-		return fmt.Errorf("failed to get pubAck for packetId: %d", appSettingAck.PacketId)
-	}
-	
-	_, err = s.sendSubscribePacket(FOREGROUND_STATE, packets.QOS_LEVEL_0)
-	if err != nil {
-		return fmt.Errorf("failed to subscribe to FOREGROUND_STATE topic: %e", err)
-	}
-
-	_, err = s.sendSubscribePacket(RESP, packets.QOS_LEVEL_0)
-	if err != nil {
-		return fmt.Errorf("failed to subscribe to LS_RESP topic: %e", err)
-	}
-
 	return nil
 }
 
@@ -113,12 +93,6 @@ func (s *Socket) beginReadStream() {
 
 func (s *Socket) sendData(data []byte) error {
 	s.client.Logger.Debug().Bytes("bytes", data).Hex("hex", data).Msg("Sending data to socket")
-
-	packetType := data[0] >> 4
-	if packetType == packets.PUBLISH || packetType == packets.SUBSCRIBE{
-		s.packetHandler.packetsSent++
-	}
-	
 	err := s.conn.WriteMessage(websocket.BinaryMessage, data)
     if err != nil {
         e := fmt.Errorf("error sending data to websocket: %s", err.Error())
@@ -127,6 +101,17 @@ func (s *Socket) sendData(data []byte) error {
     }
 
     return nil
+}
+
+func (s *Socket) SafePacketId() uint16 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.packetsSent++
+	if s.packetsSent == 0 || s.packetsSent > 65535 {
+		s.packetsSent = 1
+	}
+	return s.packetsSent
 }
 
 func (s *Socket) sendConnectPacket() error {
@@ -143,33 +128,69 @@ func (s *Socket) sendConnectPacket() error {
 	return s.sendData(connectPayload)
 }
 
-func (s *Socket) sendSubscribePacket(topic Topic, qos packets.QoS) (*Event_SubscribeACK, error) {
+func (s *Socket) sendSubscribePacket(topic Topic, qos packets.QoS, wait bool) (*Event_SubscribeACK, error) {
 	subscribeRequestPayload, packetId, err := s.client.NewSubscribeRequest(topic, qos)
 	if err != nil {
 		return nil, err
 	}
-
+	log.Println(subscribeRequestPayload)
 	err = s.sendData(subscribeRequestPayload)
 	if err != nil {
 		return nil, err
 	}
 
-	resp := s.packetHandler.waitForSubACKDetails(packetId)
-	if resp == nil {
-		return nil, fmt.Errorf("did not receive SubACK packet for packetid: %d", packetId)
+	var resp *Event_SubscribeACK
+	if wait {
+		resp = s.responseHandler.waitForSubACKDetails(packetId)
+		if resp == nil {
+			return nil, fmt.Errorf("did not receive SubACK packet for packetid: %d", packetId)
+		}
 	}
 
 	s.client.Logger.Debug().Any("resp", resp).Any("topic", topic).Msg("Successfully subscribed to topic!")
 	return resp, nil
 }
 
-func (s *Socket) sendPublishPacket(topic Topic, jsonData string, packet *packets.PublishPacket) (uint16, error) {
-	publishRequestPayload, packetId, err := s.client.NewPublishRequest(topic, jsonData, packet.Compress())
+func (s *Socket) sendPublishPacket(topic Topic, jsonData string, packet *packets.PublishPacket, packetId uint16) (uint16, error) {
+	publishRequestPayload, packetId, err := s.client.NewPublishRequest(topic, jsonData, packet.Compress(), packetId)
 	if err != nil {
 		return packetId, err
 	}
-
+	s.responseHandler.addPacketChannel(packetId)
+	s.client.Logger.Debug().Any("packetId", packetId).Msg("sending publish request!")
 	return packetId, s.sendData(publishRequestPayload)
+}
+
+type SocketLSRequestPayload struct {
+	AppId string `json:"app_id"`
+	Payload string `json:"payload"`
+	RequestId int `json:"request_id"`
+	Type int `json:"type"`
+}
+
+func (s *Socket) makeLSRequest(payload []byte, t int) (uint16, error) {
+	packetId := s.SafePacketId()
+	lsPayload := &SocketLSRequestPayload{
+		AppId: modules.SchedulerJSDefined.CurrentUserInitialData.AppID,
+		Payload: string(payload),
+		RequestId: int(packetId),
+		Type: t,
+	}
+
+	jsonPayload, err := json.Marshal(lsPayload)
+	if err != nil {
+		return 0, err
+	}
+
+	log.Println("making ls request")
+	log.Println(string(jsonPayload))
+
+	_, err = s.sendPublishPacket(LS_REQ, string(jsonPayload), &packets.PublishPacket{QOSLevel: packets.QOS_LEVEL_1}, packetId)
+	if err != nil {
+		return 0, err
+	}
+
+	return packetId, nil
 }
 
 func (s *Socket) CloseHandler(code int, text string) error {
@@ -184,10 +205,6 @@ func (s *Socket) CloseHandler(code int, text string) error {
 	}
 	
 	return nil
-}
-
-func (s *Socket) setTopics(topics []Topic) {
-	s.topics = topics
 }
 
 func (s *Socket) getConnHeaders() http.Header {

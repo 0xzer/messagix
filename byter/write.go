@@ -93,7 +93,9 @@ func (b *byter) writeString(s string, lengthType string, endianess string) error
 		endianess = "big"
 	}
 
-	b.writeInteger(uint64(len(s)), stringLengthTags[lengthType], endianess)
+	if lengthType != "" {
+		b.writeInteger(uint64(len(s)), stringLengthTags[lengthType], endianess)
+	}
 	_, err := b.Buff.Write([]byte(s))
 	return err
 }

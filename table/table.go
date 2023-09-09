@@ -1,5 +1,10 @@
 package table
 
+import (
+	"fmt"
+	"log"
+)
+
 /*
 	Unknown fields = I don't know what type it is supposed to be, because I only see 9 which is undefined
 	Trial and error works ^ check console for failed conversation within the decoder
@@ -31,4 +36,35 @@ type LSTable struct {
 	LSThreadsRangesQuery []LSThreadsRangesQuery
 	LSSetRegionHint []LSSetRegionHint
 	LSExecuteFinallyBlockForSyncTransaction []LSExecuteFinallyBlockForSyncTransaction
+	LSRemoveTask []LSRemoveTask
+	LSTaskExists []LSTaskExists
+	LSDeleteThenInsertContact []LSDeleteThenInsertContact
+}
+
+var SPTable = map[string]string{
+	"mciTraceLog": "LSMciTraceLog",
+	"executeFirstBlockForSyncTransaction": "LSExecuteFirstBlockForSyncTransaction",
+	"updateThreadsRangesV2": "LSUpdateThreadsRangesV2",
+	"upsertSyncGroupThreadsRange": "LSUpsertSyncGroupThreadsRange",
+	"upsertFolderSeenTimestamp": "LSUpsertFolderSeenTimestamp",
+	"setHMPSStatus": "LSSetHMPSStatus",
+	"upsertSequenceId": "LSUpsertSequenceId",
+	"executeFinallyBlockForSyncTransaction": "LSExecuteFinallyBlockForSyncTransaction",
+	"verifyContactRowExists": "LSVerifyContactRowExists",
+	"taskExists": "LSTaskExists",
+	"removeTask": "LSRemoveTask",
+	"deleteThenInsertContact": "LSDeleteThenInsertContact",
+}
+
+func SPToDepMap(sp []string) map[string]string {
+	m := make(map[string]string, 0)
+	for _, d := range sp {
+		depName, ok := SPTable[d]
+		if !ok {
+			log.Println(fmt.Sprintf("can't convert sp %s to dependency name because it wasn't found in the SPTable", d))
+			continue
+		}
+		m[d] = depName
+	}
+	return m
 }

@@ -1,6 +1,8 @@
 package messagix
 
-import "github.com/0xzer/messagix/byter"
+import (
+	"github.com/0xzer/messagix/byter"
+)
 
 type Request struct {
     PacketByte uint8
@@ -12,6 +14,7 @@ func (r *Request) Write(payload Payload) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 
 	r.RemainingLength = uint32(len(payloadBytes))
 	header, err := byter.NewWriter().WriteFromStruct(r)

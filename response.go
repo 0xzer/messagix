@@ -2,6 +2,7 @@ package messagix
 
 import (
 	"fmt"
+
 	"github.com/0xzer/messagix/byter"
 	"github.com/0xzer/messagix/packets"
 )
@@ -14,6 +15,7 @@ var responseMap = map[uint8]responseHandler{
 	packets.CONNACK: func() ResponseData {return &Event_Ready{}},
 	packets.PUBACK: func() ResponseData {return &Event_PublishACK{}},
 	packets.SUBACK: func() ResponseData {return &Event_SubscribeACK{}},
+	packets.PUBLISH: func() ResponseData {return &Event_PublishResponse{}},
 }
 
 type Response struct {

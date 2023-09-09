@@ -171,6 +171,13 @@ func (ls *LightSpeedDecoder) handleStoredProcedure(referenceName string, data []
 				continue
 			}
 			newDepInstance.Field(i).SetBool(boolean)
+		case reflect.Int:
+			integer, ok := val.(int)
+			if !ok {
+				log.Println(fmt.Sprintf("failed to set int to %v in dependency %v for field %v", val, depFieldsType.Name(), fieldInfo.Name))
+				continue
+			}
+			newDepInstance.Field(i).SetInt(int64(integer))
 		default:
 			log.Println("invalid kind:", kind, val)
 			os.Exit(1)

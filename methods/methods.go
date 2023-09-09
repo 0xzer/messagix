@@ -1,9 +1,15 @@
 package methods
 
 import (
+	"encoding/base64"
+	"encoding/hex"
+	"log"
 	"math/rand"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var Charset = []rune("abcdefghijklmnopqrstuvwxyz1234567890")
@@ -34,4 +40,13 @@ func GenerateEpochId() int64 {
 	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 	id := (timestamp << 22) | (42 << 12)
 	return id
+}
+
+func GenerateTraceId() string {
+	uuidHex := strings.ReplaceAll(uuid.NewString(), "-", "")
+	decodedHex, err := hex.DecodeString(uuidHex)
+	if err != nil {
+		log.Fatalf("failed to decode traceId string: %s", err)
+	}
+	return "#" + base64.RawURLEncoding.EncodeToString(decodedHex)
 }

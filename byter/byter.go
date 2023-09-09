@@ -18,6 +18,18 @@ var stringLengthTags = map[string]reflect.Kind{
 	"int64": reflect.Int64,
 }
 
+var stringLengthSizes = map[string]int{
+	"uint8":  1,
+	"uint16": 2,
+	"uint32": 4,
+	"uint64": 8,
+	"int8":   1,
+	"byte":   1,
+	"int16":  2,
+	"int32":  4,
+	"int64":  8,
+}
+
 type EndianOps struct {
 	Read  endianReaderFunc
 	Write endianWriterFunc
