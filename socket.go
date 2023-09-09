@@ -120,7 +120,7 @@ func (s *Socket) sendConnectPacket() error {
 		return err
 	}
 
-	connectFlags := CreateConnectFlagByte(ConnectFlags{CleanSession: true, Username: true})
+	connectFlags := packets.CreateConnectFlagByte(packets.ConnectFlags{CleanSession: true, Username: true})
 	connectPayload, err := s.client.NewConnectRequest(connectAdditionalData, connectFlags)
 	if err != nil {
 		return err
