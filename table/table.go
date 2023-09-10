@@ -39,6 +39,14 @@ type LSTable struct {
 	LSRemoveTask []LSRemoveTask
 	LSTaskExists []LSTaskExists
 	LSDeleteThenInsertContact []LSDeleteThenInsertContact
+	LSUpdateTypingIndicator []LSUpdateTypingIndicator
+	LSCheckAuthoritativeMessageExists []LSCheckAuthoritativeMessageExists
+	LSMoveThreadToInboxAndUpdateParent []LSMoveThreadToInboxAndUpdateParent
+	LSUpdateThreadSnippet []LSUpdateThreadSnippet
+	LSVerifyThreadExists []LSVerifyThreadExists
+	LSBumpThread []LSBumpThread
+	LSUpdateParticipantLastMessageSendTimestamp []LSUpdateParticipantLastMessageSendTimestamp
+	LSInsertMessage []LSInsertMessage
 }
 
 var SPTable = map[string]string{
@@ -54,6 +62,16 @@ var SPTable = map[string]string{
 	"taskExists": "LSTaskExists",
 	"removeTask": "LSRemoveTask",
 	"deleteThenInsertContact": "LSDeleteThenInsertContact",
+	"updateTypingIndicator": "LSUpdateTypingIndicator",
+	"checkAuthoritativeMessageExists": "LSCheckAuthoritativeMessageExists",
+	"moveThreadToInboxAndUpdateParent": "LSMoveThreadToInboxAndUpdateParent",
+	"updateThreadSnippet": "LSUpdateThreadSnippet",
+	"verifyThreadExists": "LSVerifyThreadExists",
+	"updateReadReceipt": "LSUpdateReadReceipt",
+	"setForwardScore": "LSSetForwardScore",
+	"bumpThread": "LSBumpThread",
+	"updateParticipantLastMessageSendTimestamp": "LSUpdateParticipantLastMessageSendTimestamp",
+	"insertMessage": "LSInsertMessage",
 }
 
 func SPToDepMap(sp []string) map[string]string {

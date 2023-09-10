@@ -3,7 +3,6 @@ package messagix
 import (
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 
 	"github.com/0xzer/messagix/methods"
@@ -95,14 +94,10 @@ func (m *MessageBuilder) Execute() (error, error){
 		log.Fatal(err)
 	}
 
-	log.Println("packetId:", packetId)
-
 	resp := m.client.socket.responseHandler.waitForPubResponseDetails(packetId)
 	if resp == nil {
 		return nil, fmt.Errorf("failed to receive response from socket while trying to send message. packetId: %d", packetId)
 	}
 
-	m.client.Logger.Debug().Any("resp", resp).Msg("got response!")
-	os.Exit(1)
 	return nil, nil
 }

@@ -78,6 +78,7 @@ func (s *Socket) beginReadStream() {
 	for {
 		messageType, p, err := s.conn.ReadMessage()
 		if err != nil {
+			log.Fatal(err)
 			s.handleErrorEvent(fmt.Errorf("error reading message from websocket: %s", err.Error()))
 			return
 		}

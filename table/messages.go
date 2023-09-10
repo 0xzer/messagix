@@ -54,7 +54,7 @@ type LSUpsertMessage struct {
     AdminMsgCtaId int64 `index:"46"`
     AdminMsgCtaTitle int64 `index:"47"`
     AdminMsgCtaType int64 `index:"48"`
-    CannotUnsendReason int64 `index:"49"`
+    CannotUnsendReason MessageUnsendabilityStatus `index:"49"`
     TextHasLinks bool `index:"50"`
     ViewFlags int64 `index:"51"`
     DisplayedContentTypes DisplayedContentTypes `index:"52"`
@@ -102,4 +102,79 @@ type LSInsertNewMessageRange struct {
 
 type LSDeleteExistingMessageRanges struct {
 	ConsistentThreadFbid int64 `index:"0"`
+}
+
+type LSCheckAuthoritativeMessageExists struct {
+    ThreadKey int64 `index:"0"`
+    OfflineThreadingId int64 `index:"1"`
+}
+
+type LSUpdateParticipantLastMessageSendTimestamp struct {
+    ThreadKey int64 `index:"0"`
+    SenderId int64 `index:"1"`
+    Timestamp int64 `index:"2"`
+}
+
+type LSInsertMessage struct {
+    Text string `index:"0"`
+    SubscriptErrorMessage string `index:"1"`
+    AuthorityLevel int64 `index:"2"`
+    ThreadKey int64 `index:"3"`
+    TimestampMs int64 `index:"5"`
+    PrimarySortKey int64 `index:"6"`
+    SecondarySortKey int64 `index:"7"`
+    MessageId string `index:"8"`
+    OfflineThreadingId string `index:"9"`
+    SenderId int64 `index:"10"`
+    StickerId int64 `index:"11"`
+    IsAdminMessage bool `index:"12"`
+    MessageRenderingType int64 `index:"13"`
+    SendStatus int64 `index:"15"`
+    SendStatusV2 int64 `index:"16"`
+    IsUnsent bool `index:"17"`
+    UnsentTimestampMs int64 `index:"18"`
+    MentionOffsets int64 `index:"19"`
+    MentionLengths int64 `index:"20"`
+    MentionIds int64 `index:"21"`
+    MentionTypes int64 `index:"22"`
+    ReplySourceId int64 `index:"23"`
+    ReplySourceType int64 `index:"24"`
+    ReplySourceTypeV2 int64 `index:"25"`
+    ReplyStatus int64 `index:"26"`
+    ReplySnippet int64 `index:"27"`
+    ReplyMessageText string `index:"28"`
+    ReplyToUserId int64 `index:"29"`
+    ReplyMediaExpirationTimestampMs int64 `index:"30"`
+    ReplyMediaUrl string `index:"31"`
+    ReplyMediaPreviewWidth int64 `index:"33"`
+    ReplyMediaPreviewHeight int64 `index:"34"`
+    ReplyMediaUrlMimeType int64 `index:"35"`
+    ReplyMediaUrlFallback string `index:"36"`
+    ReplyCtaId int64 `index:"37"`
+    ReplyCtaTitle string `index:"38"`
+    ReplyAttachmentType int64 `index:"39"`
+    ReplyAttachmentId int64 `index:"40"`
+    ReplyAttachmentExtra string `index:"41"`
+    IsForwarded bool `index:"42"`
+    ForwardScore int64 `index:"43"`
+    HasQuickReplies bool `index:"44"`
+    AdminMsgCtaId int64 `index:"45"`
+    AdminMsgCtaTitle string `index:"46"`
+    AdminMsgCtaType int64 `index:"47"`
+    CannotUnsendReason MessageUnsendabilityStatus `index:"48"`
+    TextHasLinks bool `index:"49"`
+    ViewFlags int64 `index:"50"`
+    DisplayedContentTypes DisplayedContentTypes `index:"51"`
+    ViewedPluginKey int64 `index:"52"`
+    ViewedPluginContext int64 `index:"53"`
+    QuickReplyType int64 `index:"54"`
+    HotEmojiSize int64 `index:"55"`
+    ReplySourceTimestampMs int64 `index:"56"`
+    EphemeralDurationInSec int64 `index:"57"`
+    MsUntilExpirationTs int64 `index:"58"`
+    EphemeralExpirationTs int64 `index:"59"`
+    TakedownState int64 `index:"60"`
+    IsCollapsed bool `index:"61"`
+    SubthreadKey int64 `index:"62"`
+    IsPaidPartnership bool `index:"63"`
 }

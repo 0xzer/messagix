@@ -48,6 +48,7 @@ func (s *Socket) newConnectJSON() (string, error) {
 		P: nil,
 		UserAgent: USER_AGENT,
 		Aids: nil,
+		Cid: s.client.configs.mqttConfig.ClientId,
 	}
 	
 	jsonData, err := json.Marshal(payload)

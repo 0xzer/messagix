@@ -139,3 +139,43 @@ type LSThreadsRangesQuery struct {
     AdditionalPagesToFetch int64 `index:"7"`
     Unknown8 bool `index:"8"`
 }
+
+type LSUpdateTypingIndicator struct {
+    ThreadKey int64 `index:"0"`
+    SenderId int64 `index:"1"`
+    IsTyping bool `index:"2"`
+}
+
+type LSMoveThreadToInboxAndUpdateParent struct {
+    ThreadKey int64 `index:"0"`
+    ParentThreadKey int64 `index:"1"`
+}
+
+type LSUpdateThreadSnippet struct {
+    ThreadKey int64 `index:"0"`
+    Snippet string `index:"1"`
+    IsAdminSnippet bool `index:"2"`
+    SnippetSenderContactId int64 `index:"3"`
+    SnippetHasEmoji bool `index:"4"`
+    ViewedPluginKey string `index:"5"`
+    ViewedPluginContext string `index:"6"`
+}
+
+type LSVerifyThreadExists struct {
+    ThreadKey int64 `index:"0"`
+    MailboxType int64 `index:"1"`
+    ThreadType string `index:"2"`
+    FolderName string `index:"3"`
+    LastReadWatermarkTimestampMs int64 `index:"4"`
+    RemoveWatermarkTimestampMs int64 `index:"5"`
+    OngoingCallState int64 `index:"6"`
+    ParentThreadKey int64 `index:"7"`
+    AuthorityLevel int64 `index:"8"`
+    UnsendLimitMs int64 `index:"9"`
+}
+
+type LSBumpThread struct {
+    LastReadWatermarkTimestampMs int64 `index:"0"`
+    Unknown1 int64 `index:"1"`
+    ThreadKey int64 `index:"2"`
+}

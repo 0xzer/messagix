@@ -128,3 +128,22 @@ const (
    ROOMS_SIDE_CHAT InitiatingSource = 2
    FACEBOOK_FULLSCREEN InitiatingSource = 3
 )
+
+type MessageUnsendabilityStatus int64
+const (
+   CAN_UNSEND MessageUnsendabilityStatus =  0
+   DENY_LOG_MESSAGE MessageUnsendabilityStatus =  1
+   DENY_TOMBSTONE_MESSAGE MessageUnsendabilityStatus =  2
+   DENY_FOR_NON_SENDER MessageUnsendabilityStatus =  3
+   DENY_P2P_PAYMENT MessageUnsendabilityStatus =  4
+   DENY_STORY_REACTION MessageUnsendabilityStatus =  5
+   DENY_BLOB_ATTACHMENT MessageUnsendabilityStatus =  6
+   DENY_MESSAGE_NOT_FOUND MessageUnsendabilityStatus =  7
+   DENY_MESSAGE_INSTAGRAM_DIRECT_WRITE_RESTRICTION MessageUnsendabilityStatus =  8
+)
+
+type AppState int64
+const (
+   BACKGROUND AppState = 0
+   FOREGROUND AppState = 1
+)

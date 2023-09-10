@@ -2,6 +2,7 @@ package messagix
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/0xzer/messagix/byter"
 	"github.com/0xzer/messagix/packets"
@@ -25,6 +26,8 @@ type Response struct {
 }
 
 func (r *Response) Read(data []byte) error {
+	log.Println("Got data:")
+	log.Println(data)
 	reader := byter.NewReader(data)
 	err := reader.ReadToStruct(r)
 	if err != nil {

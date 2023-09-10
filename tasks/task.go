@@ -1,8 +1,6 @@
 package tasks
 
 /*
-	type 1 = sync by cursor
-	type 2 = sync by sync_params
 	type 3 = task
 */
 
@@ -11,6 +9,7 @@ var TaskLabels = map[string]string{
 	"SendMessageTask": "46",
 	"ThreadMarkRead": "21",
 	"GetContactsFullTask": "207",
+	"ReportAppStateTask": "123",
 }
 
 type Task interface {
