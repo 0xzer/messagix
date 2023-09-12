@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/0xzer/messagix/table"
-	"github.com/0xzer/messagix/tasks"
+	"github.com/0xzer/messagix/socket"
 	"github.com/google/uuid"
 )
 
@@ -15,7 +15,7 @@ type Account struct {
 
 func (a *Account) GetContacts(limit int64) ([]table.LSVerifyContactRowExists, error) {
 	tskm := a.client.NewTaskManager()
-	tskm.AddNewTask(&tasks.GetContactsTask{Limit: limit})
+	tskm.AddNewTask(&socket.GetContactsTask{Limit: limit})
 
 	payload, err := tskm.FinalizePayload()
 	if err != nil {
@@ -38,7 +38,7 @@ func (a *Account) GetContacts(limit int64) ([]table.LSVerifyContactRowExists, er
 func (a *Account) GetContactsFull(contactIds []int64) ([]table.LSDeleteThenInsertContact, error) {
 	tskm := a.client.NewTaskManager()
 	for _, id := range contactIds {
-		tskm.AddNewTask(&tasks.GetContactsFullTask{
+		tskm.AddNewTask(&socket.GetContactsFullTask{
 			ContactId: id,
 		})
 	}
@@ -63,7 +63,7 @@ func (a *Account) GetContactsFull(contactIds []int64) ([]table.LSDeleteThenInser
 
 func (a *Account) ReportAppState(state table.AppState) error {
 	tskm := a.client.NewTaskManager()
-	tskm.AddNewTask(&tasks.ReportAppStateTask{AppState: state, RequestId: uuid.NewString()})
+	tskm.AddNewTask(&socket.ReportAppStateTask{AppState: state, RequestId: uuid.NewString()})
 
 	payload, err := tskm.FinalizePayload()
 	if err != nil {
@@ -75,7 +75,6 @@ func (a *Account) ReportAppState(state table.AppState) error {
 		log.Fatal(err)
 	}
 
-	log.Println("packetId:", packetId)
 
 	resp := a.client.socket.responseHandler.waitForPubResponseDetails(packetId)
 	if resp == nil {

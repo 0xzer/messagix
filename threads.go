@@ -7,7 +7,7 @@ import (
 
 	"github.com/0xzer/messagix/methods"
 	"github.com/0xzer/messagix/table"
-	"github.com/0xzer/messagix/tasks"
+	"github.com/0xzer/messagix/socket"
 )
 
 
@@ -17,19 +17,19 @@ type Threads struct {
 
 type MessageBuilder struct {
 	client *Client
-	payload *tasks.SendMessageTask
-	readPayload *tasks.ThreadMarkRead
+	payload *socket.SendMessageTask
+	readPayload *socket.ThreadMarkRead
 }
 
 func (t *Threads) NewMessageBuilder(threadId int64) *MessageBuilder {
 	return &MessageBuilder{
 		client: t.client,
-		payload: &tasks.SendMessageTask{
+		payload: &socket.SendMessageTask{
 			ThreadId: threadId,
 			SkipUrlPreviewGen: 0,
 			TextHasLinks: 0,
 		},
-		readPayload: &tasks.ThreadMarkRead{
+		readPayload: &socket.ThreadMarkRead{
 			ThreadId: threadId,
 		},
 	}

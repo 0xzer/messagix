@@ -66,4 +66,5 @@ type SiteConfig struct {
 	ConnectionClass string
 	VersionId int64
 	X_ASDB_ID string
+	Locale string
 }

@@ -50,11 +50,11 @@ func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Cli
 			log.Fatalf("failed to set proxy: %e", err)
 		}
 	}
-
+	
 	socket := cli.NewSocketClient()
 	cli.socket = socket
 
-	cli.configs = &Configs{client: cli, needSync: false}
+	cli.configs = &Configs{client: cli, needSync: false, syncCursors: make(map[int64]string, 0)}
 
 	moduleLoader := &ModuleParser{client: cli}
 	moduleLoader.load()

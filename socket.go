@@ -34,6 +34,7 @@ func (c *Client) NewSocketClient() *Socket {
 			client: c,
 			requestChannels: make(map[uint16]chan interface{}, 0),
 			packetChannels: make(map[uint16]chan interface{}, 0),
+			syncChannels: make(map[uint16]chan interface{}, 0),
 			packetTimeout: time.Second * 10, // 10 sec timeout if puback is not received
 		},
 		mu: &sync.Mutex{},
@@ -87,13 +88,13 @@ func (s *Socket) beginReadStream() {
 			case websocket.TextMessage:
 				s.client.Logger.Debug().Any("data", p).Bytes("bytes", p).Msg("Received TextMessage")
 			case websocket.BinaryMessage:
-				s.handleBinaryMessage(p)
+				go s.handleBinaryMessage(p)
 		}
 	}
 }
 
 func (s *Socket) sendData(data []byte) error {
-	s.client.Logger.Debug().Bytes("bytes", data).Hex("hex", data).Msg("Sending data to socket")
+	s.client.Logger.Debug().Hex("hex", data).Msg("Sending data to socket")
 	err := s.conn.WriteMessage(websocket.BinaryMessage, data)
     if err != nil {
         e := fmt.Errorf("error sending data to websocket: %s", err.Error())
@@ -134,7 +135,7 @@ func (s *Socket) sendSubscribePacket(topic Topic, qos packets.QoS, wait bool) (*
 	if err != nil {
 		return nil, err
 	}
-	log.Println(subscribeRequestPayload)
+
 	err = s.sendData(subscribeRequestPayload)
 	if err != nil {
 		return nil, err
@@ -157,8 +158,10 @@ func (s *Socket) sendPublishPacket(topic Topic, jsonData string, packet *packets
 	if err != nil {
 		return packetId, err
 	}
+
+	log.Println(string(publishRequestPayload))
 	s.responseHandler.addPacketChannel(packetId)
-	s.client.Logger.Debug().Any("packetId", packetId).Msg("sending publish request!")
+	//s.client.Logger.Debug().Any("packetId", packetId).Msg("sending publish request!")
 	return packetId, s.sendData(publishRequestPayload)
 }
 
@@ -182,9 +185,6 @@ func (s *Socket) makeLSRequest(payload []byte, t int) (uint16, error) {
 	if err != nil {
 		return 0, err
 	}
-
-	log.Println("making ls request")
-	log.Println(string(jsonPayload))
 
 	_, err = s.sendPublishPacket(LS_REQ, string(jsonPayload), &packets.PublishPacket{QOSLevel: packets.QOS_LEVEL_1}, packetId)
 	if err != nil {

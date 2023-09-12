@@ -47,6 +47,8 @@ type LSTable struct {
 	LSBumpThread []LSBumpThread
 	LSUpdateParticipantLastMessageSendTimestamp []LSUpdateParticipantLastMessageSendTimestamp
 	LSInsertMessage []LSInsertMessage
+	LSUpsertGradientColor []LSUpsertGradientColor
+	LSUpsertTheme []LSUpsertTheme
 }
 
 var SPTable = map[string]string{
@@ -72,6 +74,8 @@ var SPTable = map[string]string{
 	"bumpThread": "LSBumpThread",
 	"updateParticipantLastMessageSendTimestamp": "LSUpdateParticipantLastMessageSendTimestamp",
 	"insertMessage": "LSInsertMessage",
+	"upsertTheme": "LSUpsertTheme",
+	"upsertGradientColor": "LSUpsertGradientColor",
 }
 
 func SPToDepMap(sp []string) map[string]string {

@@ -1,4 +1,4 @@
-package tasks
+package socket
 
 import "github.com/0xzer/messagix/table"
 

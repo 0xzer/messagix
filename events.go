@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+
 	"github.com/0xzer/messagix/lightspeed"
 	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/packets"
+	"github.com/0xzer/messagix/socket"
 	"github.com/0xzer/messagix/table"
 )
 
@@ -27,7 +29,7 @@ func (s *Socket) handleBinaryMessage(data []byte) {
 		case *Event_PublishACK, *Event_SubscribeACK:
 			s.handleACKEvent(evt.(AckEvent))
 		case *Event_Ready:
-			go s.handleReadyEvent(evt)
+			s.handleReadyEvent(evt)
 		default:
 			s.client.Logger.Info().Any("data", data).Msg("sending default event...")
 			s.client.eventHandler(resp.ResponseData.Finish())
@@ -61,9 +63,47 @@ func (s *Socket) handleReadyEvent(data *Event_Ready) {
 		log.Fatalf("failed to subscribe to ls_resp: %e", err)
 	}
 
+	
+	tskm := s.client.NewTaskManager()
+	tskm.AddNewTask(&socket.SyncGroupsTask{
+		IsAfter: 0,
+		ParentThreadKey: -1,
+		ReferenceThreadKey: 0,
+		ReferenceActivityTimestamp: 9999999999999,
+		AdditionalPagesToFetch: 0,
+		Cursor: s.client.configs.getLastAppliedCursor(1),
+		SyncGroup: 1,
+	})
+	tskm.AddNewTask(&socket.SyncGroupsTask{
+		IsAfter: 0,
+		ParentThreadKey: -1,
+		ReferenceThreadKey: 0,
+		ReferenceActivityTimestamp: 9999999999999,
+		AdditionalPagesToFetch: 0,
+		SyncGroup: 95,
+	})
+
+	payload, err := tskm.FinalizePayload()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println(string(payload))
+	_, err = s.makeLSRequest(payload, 3)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	err = s.client.Account.ReportAppState(table.FOREGROUND)
 	if err != nil {
 		log.Fatalf("failed to report app state to foreground (active): %e", err)
+	}
+	
+	dbm := s.client.NewDatabaseManager()
+	dbm.AddInitQueries()
+	err = dbm.PublishQueries()
+	if err != nil {
+		log.Fatalf("failed to publish initial queries: %e", err)
 	}
 
 	s.client.eventHandler(data.Finish())
@@ -84,10 +124,10 @@ func (s *Socket) handleErrorEvent(err error) {
 }
 
 func (s *Socket) handlePublishResponseEvent(resp *Event_PublishResponse) {
-	s.client.Logger.Info().Any("requestId", resp.Data.RequestID).Msg("Got publish response event...")
+	//s.client.Logger.Info().Any("requestId", resp.Data.RequestID).Msg("Got publish response event...")
 	packetId := resp.Data.RequestID
 	hasPacket := s.responseHandler.hasPacket(uint16(packetId))
-
+	
 	switch resp.Topic {
 		case string(LS_RESP):
 			if hasPacket {
