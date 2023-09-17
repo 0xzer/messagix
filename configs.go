@@ -1,7 +1,6 @@
 package messagix
 
 import (
-	"encoding/json"
 	"log"
 	"strconv"
 
@@ -17,7 +16,6 @@ type Configs struct {
 	needSync bool
 	mqttConfig *types.MQTTConfig
 	siteConfig *types.SiteConfig
-	syncCursors map[int64]string
 }
 
 func (c *Configs) SetupConfigs() error {
@@ -72,20 +70,33 @@ func (c *Configs) SetupConfigs() error {
 		X_ASDB_ID: "129477", // hold off on this and check if it ever changes, if so we gotta load the js file and extract it from there
 	}
 
+	c.client.syncManager.syncParams = &modules.SchedulerJSDefined.LSPlatformMessengerSyncParams
 	c.client.graphQl = &GraphQL{client: c.client, lsRequests: 0, graphQLRequests: 1}
 	if c.needSync {
-		lsData, err := c.client.graphQl.makeLSRequest(1, 0, 1)
+		err := c.client.syncManager.UpdateDatabaseSyncParams(
+			[]*socket.QueryMetadata{
+				{DatabaseId: 1, SendSyncParams: true, LastAppliedCursor: nil, SyncChannel: socket.MailBox},
+				{DatabaseId: 2, SendSyncParams: true, LastAppliedCursor: nil, SyncChannel: socket.Contact},
+				{DatabaseId: 95, SendSyncParams: true, LastAppliedCursor: nil, SyncChannel: socket.Contact},
+			},
+		)
 		if err != nil {
-			log.Fatalf("failed to sync lightspeed data: %e", err)
+			log.Fatalf("failed to update sync params for databases: 1, 2, 95")
 		}
 
+		lsData, err := c.client.syncManager.SyncDataGraphQL([]int64{1,2,95})
+		if err != nil {
+			log.Fatalf("failed to sync data via graphql for databases: 1, 2, 95")
+		}
+
+		//c.client.Logger.Info().Any("lsData", lsData).Msg("Synced data through graphql query")
 		modules.SchedulerJSRequired.LSTable = lsData
+	} else {
+		err := c.client.syncManager.SyncTransactions(modules.SchedulerJSRequired.LSTable.LSExecuteFirstBlockForSyncTransaction)
+		if err != nil {
+			log.Fatalf("failed to sync transactions from js module data with syncManager: %e", err)
+		}
 	}
-
-	for _, block := range modules.SchedulerJSRequired.LSTable.LSExecuteFirstBlockForSyncTransaction {
-		c.syncCursors[block.DatabaseId] = block.CurrentCursor
-	}
-
 	c.client.Logger.Info().Any("value", c.siteConfig.Bitmap.CompressedStr).Msg("Loaded __dyn bitmap")
 	c.client.Logger.Info().Any("value", c.siteConfig.CSRBitmap.CompressedStr).Msg("Loaded __csr bitmap")
 	c.client.Logger.Info().Any("value", c.siteConfig.VersionId).Msg("Loaded versionId")
@@ -96,21 +107,5 @@ func (c *Configs) SetupConfigs() error {
 	Any("total_contacts", len(modules.SchedulerJSRequired.LSTable.LSVerifyContactRowExists)).
 	Msg("Account metadata stats")
 
-	c.client.Logger.Info().Any("length", len(modules.SchedulerJSRequired.LSTable.LSExecuteFirstBlockForSyncTransaction)).Any("executeFirstBlockForSyncTransaction", modules.SchedulerJSRequired.LSTable.LSExecuteFirstBlockForSyncTransaction).Msg("sync information")
-	c.client.Logger.Info().Any("list", c.syncCursors).Msg("Cursors")
 	return nil
-}
-
-func (c *Configs) getSyncParams() ([]byte, error) {
-	return json.Marshal(&socket.SyncParams{
-		Locale: c.siteConfig.Locale,
-	})
-}
-
-func (c *Configs) getLastAppliedCursor(database int64) string {
-	return c.syncCursors[database]
-}
-
-func (c *Configs) updateLastAppliedCursor(database int64, cursor string) {
-	c.syncCursors[database] = cursor
 }

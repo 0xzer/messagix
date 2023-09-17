@@ -16,7 +16,6 @@ type ResponseHandler struct {
 	client *Client
 	requestChannels map[uint16]chan interface{}
 	packetChannels map[uint16]chan interface{}
-	syncChannels map[uint16]chan interface{}
     packetTimeout time.Duration
 }
 
@@ -37,24 +36,10 @@ func (p *ResponseHandler) addRequestChannel(packetId uint16) {
 	p.requestChannels[packetId] = make(chan interface{}, 1)
 }
 
-func (p *ResponseHandler) addSyncChannel(packetId uint16) {
-	p.syncChannels[packetId] = make(chan interface{}, 1)
-}
-
-func (p *ResponseHandler) updateSyncChannel(packetId uint16, packetData interface{}) error {
-	if ch, ok := p.syncChannels[packetId]; ok {
-		ch <- packetData
-		p.client.Logger.Info().Any("data", packetData).Any("packetId", packetId).Msg("Updated sync channel!")
-		return nil
-	}
-
-	return fmt.Errorf("failed to update sync channel for packetId %d", packetId)
-}
-
 func (p *ResponseHandler) updatePacketChannel(packetId uint16, packetData interface{}) error {
 	if ch, ok := p.packetChannels[packetId]; ok {
 		ch <- packetData
-		p.client.Logger.Info().Any("data", packetData).Any("packetId", packetId).Msg("Updated packet channel!")
+		//p.client.Logger.Info().Any("data", packetData).Any("packetId", packetId).Msg("Updated packet channel!")
 		return nil
 	}
 
@@ -64,7 +49,7 @@ func (p *ResponseHandler) updatePacketChannel(packetId uint16, packetData interf
 func (p *ResponseHandler) updateRequestChannel(packetId uint16, packetData interface{}) error {
 	if ch, ok := p.requestChannels[packetId]; ok {
 		ch <- packetData
-		p.client.Logger.Info().Any("data", packetData).Any("packetId", packetId).Msg("Updated request channel!")
+		//p.client.Logger.Info().Any("data", packetData).Any("packetId", packetId).Msg("Updated request channel!")
 		return nil
 	}
 

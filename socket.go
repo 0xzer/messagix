@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/0xzer/messagix/debug"
 	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/packets"
 	"github.com/gorilla/websocket"
@@ -34,7 +35,6 @@ func (c *Client) NewSocketClient() *Socket {
 			client: c,
 			requestChannels: make(map[uint16]chan interface{}, 0),
 			packetChannels: make(map[uint16]chan interface{}, 0),
-			syncChannels: make(map[uint16]chan interface{}, 0),
 			packetTimeout: time.Second * 10, // 10 sec timeout if puback is not received
 		},
 		mu: &sync.Mutex{},
@@ -94,7 +94,7 @@ func (s *Socket) beginReadStream() {
 }
 
 func (s *Socket) sendData(data []byte) error {
-	s.client.Logger.Debug().Hex("hex", data).Msg("Sending data to socket")
+	s.client.Logger.Debug().Any("hex", debug.BeautifyHex(data)).Msg("Sending data to socket")
 	err := s.conn.WriteMessage(websocket.BinaryMessage, data)
     if err != nil {
         e := fmt.Errorf("error sending data to websocket: %s", err.Error())

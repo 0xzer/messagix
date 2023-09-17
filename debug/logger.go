@@ -1,8 +1,11 @@
 package debug
 
 import (
+	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
+
 	"github.com/mattn/go-colorable"
 	zerolog "github.com/rs/zerolog"
 )
@@ -40,4 +43,14 @@ var output = zerolog.ConsoleWriter{
 
 func NewLogger() zerolog.Logger {
 	return zerolog.New(output).With().Timestamp().Logger()
+}
+
+func BeautifyHex(data []byte) string {
+	hexStr := hex.EncodeToString(data)
+	result := ""
+	for i := 0; i < len(hexStr); i += 2 {
+		result += hexStr[i:i+2] + " "
+	}
+
+	return strings.TrimRight(result, " ")
 }

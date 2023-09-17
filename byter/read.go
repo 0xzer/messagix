@@ -14,7 +14,7 @@ func NewReader(data []byte) *byter {
 	}
 }
 
-func (b *byter) readInteger(kind reflect.Kind, size int, endian string) (uint64, error) {
+func (b *byter) ReadInteger(kind reflect.Kind, size int, endian string) (uint64, error) {
 	if endian == "" {
 		endian = "big"
 	}
@@ -66,7 +66,7 @@ func (b *byter) ReadToStruct(s interface{}) error {
 			} else {
 				size := int(field.Type().Size())
 				endianess := tags.Get("endian")
-				uintValue, err := b.readInteger(field.Kind(), size, endianess)
+				uintValue, err := b.ReadInteger(field.Kind(), size, endianess)
 				if err != nil {
 					return err
 				}
@@ -116,7 +116,7 @@ func (b *byter) readString(lengthType string, endianess string) (string, error) 
 		return "", fmt.Errorf("invalid lengthType: %s", lengthType)
 	}
 
-	strLength, err := b.readInteger(kind, size, endianess) // Now, `size` is an integer value.
+	strLength, err := b.ReadInteger(kind, size, endianess) // Now, `size` is an integer value.
 	if err != nil {
 		return "", err
 	}

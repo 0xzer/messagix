@@ -49,6 +49,7 @@ type LSTable struct {
 	LSInsertMessage []LSInsertMessage
 	LSUpsertGradientColor []LSUpsertGradientColor
 	LSUpsertTheme []LSUpsertTheme
+	LSInsertStickerAttachment []LSInsertStickerAttachment
 }
 
 var SPTable = map[string]string{
@@ -76,6 +77,7 @@ var SPTable = map[string]string{
 	"insertMessage": "LSInsertMessage",
 	"upsertTheme": "LSUpsertTheme",
 	"upsertGradientColor": "LSUpsertGradientColor",
+	"insertStickerAttachment": "LSInsertStickerAttachment",
 }
 
 func SPToDepMap(sp []string) map[string]string {

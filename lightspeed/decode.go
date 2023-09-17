@@ -137,6 +137,11 @@ func (ls *LightSpeedDecoder) handleStoredProcedure(referenceName string, data []
 			index, _ = strconv.Atoi(fieldInfo.Tag.Get("index"))
 		}
 		
+		if index > len(data)-1 {
+			log.Println(fmt.Sprintf("breaking handleStoredProcedure loop because the defined struct exceeds the length of the lightspeed data slice: (index=%d, sliceLen=%d, field=%s, dependency=%s)", index, len(data)-1, fieldInfo.Name, depFieldsType.Name()))
+			break
+		}
+
 		kind := fieldInfo.Type.Kind()
 		val := ls.Decode(data[index])
 		if val == nil { // skip setting field, because the index in the array was [9] which is undefined.
@@ -147,14 +152,14 @@ func (ls *LightSpeedDecoder) handleStoredProcedure(referenceName string, data []
 		case reflect.Int64:
 			i64, ok := val.(int64)
 			if !ok {
-				log.Println(fmt.Sprintf("failed to set int64 to %v in dependency %v for field %v", val, depFieldsType.Name(), fieldInfo.Name))
+				log.Println(fmt.Sprintf("failed to set int64 to %v in dependency %v for field %v (index=%d)", val, depFieldsType.Name(), fieldInfo.Name, index))
 				continue
 			}
 			newDepInstance.Field(i).SetInt(i64)
 		case reflect.String:
 			str, ok := val.(string)
 			if !ok {
-				log.Println(fmt.Sprintf("failed to set string to %v in dependency %v for field %v", val, depFieldsType.Name(), fieldInfo.Name))
+				log.Println(fmt.Sprintf("failed to set string to %v in dependency %v for field %v (index=%d)", val, depFieldsType.Name(), fieldInfo.Name, index))
 				continue
 			}
 			newDepInstance.Field(i).SetString(str)
@@ -167,14 +172,14 @@ func (ls *LightSpeedDecoder) handleStoredProcedure(referenceName string, data []
 		case reflect.Bool:
 			boolean, ok := val.(bool)
 			if !ok {
-				log.Println(fmt.Sprintf("failed to set bool to %v in dependency %v for field %v", val, depFieldsType.Name(), fieldInfo.Name))
+				log.Println(fmt.Sprintf("failed to set bool to %v in dependency %v for field %v (index=%d)", val, depFieldsType.Name(), fieldInfo.Name, index))
 				continue
 			}
 			newDepInstance.Field(i).SetBool(boolean)
 		case reflect.Int:
 			integer, ok := val.(int)
 			if !ok {
-				log.Println(fmt.Sprintf("failed to set int to %v in dependency %v for field %v", val, depFieldsType.Name(), fieldInfo.Name))
+				log.Println(fmt.Sprintf("failed to set int to %v in dependency %v for field %v (index=%d)", val, depFieldsType.Name(), fieldInfo.Name, index))
 				continue
 			}
 			newDepInstance.Field(i).SetInt(int64(integer))

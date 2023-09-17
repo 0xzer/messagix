@@ -25,6 +25,7 @@ type Client struct {
 	eventHandler EventHandler
 	graphQl *GraphQL
 	configs *Configs
+	syncManager *SyncManager
 
 	cookies *types.Cookies
 	proxy Proxy
@@ -54,17 +55,17 @@ func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Cli
 	socket := cli.NewSocketClient()
 	cli.socket = socket
 
-	cli.configs = &Configs{client: cli, needSync: false, syncCursors: make(map[int64]string, 0)}
+	cli.configs = &Configs{client: cli, needSync: false}
 
 	moduleLoader := &ModuleParser{client: cli}
 	moduleLoader.load()
 
-
+	cli.syncManager = cli.NewSyncManager()
 	configSetupErr := cli.configs.SetupConfigs()
 	if configSetupErr != nil {
 		log.Fatal(configSetupErr)
 	}
-
+	
 	cli.Account = &Account{client: cli}
 	cli.Threads = &Threads{client: cli}
 

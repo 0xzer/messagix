@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/0xzer/messagix/debug"
 	"github.com/0xzer/messagix/lightspeed"
 	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/packets"
@@ -13,7 +14,7 @@ import (
 )
 
 func (s *Socket) handleBinaryMessage(data []byte) {
-	s.client.Logger.Debug().Hex("hex-data", data).Bytes("bytes", data).Msg("Received BinaryMessage")
+	s.client.Logger.Debug().Any("hex-data", debug.BeautifyHex(data)).Bytes("bytes", data).Msg("Received BinaryMessage")
 	if s.client.eventHandler == nil {
 		return
 	}
@@ -71,7 +72,7 @@ func (s *Socket) handleReadyEvent(data *Event_Ready) {
 		ReferenceThreadKey: 0,
 		ReferenceActivityTimestamp: 9999999999999,
 		AdditionalPagesToFetch: 0,
-		Cursor: s.client.configs.getLastAppliedCursor(1),
+		Cursor: s.client.syncManager.getCursor(1),
 		SyncGroup: 1,
 	})
 	tskm.AddNewTask(&socket.SyncGroupsTask{
@@ -88,23 +89,31 @@ func (s *Socket) handleReadyEvent(data *Event_Ready) {
 		log.Fatal(err)
 	}
 
+	log.Println("sending task 145:")
 	log.Println(string(payload))
-	_, err = s.makeLSRequest(payload, 3)
+	packetId, err = s.makeLSRequest(payload, 3)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	resp := s.responseHandler.waitForPubResponseDetails(packetId)
+	log.Println("got response from sync groups task:")
+	log.Println(resp.Data.Payload)
 
 	err = s.client.Account.ReportAppState(table.FOREGROUND)
 	if err != nil {
 		log.Fatalf("failed to report app state to foreground (active): %e", err)
 	}
-	
-	dbm := s.client.NewDatabaseManager()
-	dbm.AddInitQueries()
-	err = dbm.PublishQueries()
+
+	err = s.client.syncManager.EnsureSyncedSocket([]int64{
+		1,
+	})
+
 	if err != nil {
-		log.Fatalf("failed to publish initial queries: %e", err)
+		log.Fatal(err)
 	}
+
+	log.Println("synced data... for db 1")
 
 	s.client.eventHandler(data.Finish())
 }
@@ -127,11 +136,11 @@ func (s *Socket) handlePublishResponseEvent(resp *Event_PublishResponse) {
 	//s.client.Logger.Info().Any("requestId", resp.Data.RequestID).Msg("Got publish response event...")
 	packetId := resp.Data.RequestID
 	hasPacket := s.responseHandler.hasPacket(uint16(packetId))
-	
 	switch resp.Topic {
 		case string(LS_RESP):
+			data := resp.Finish().(*Event_PublishResponse)
 			if hasPacket {
-				err := s.responseHandler.updateRequestChannel(uint16(packetId), resp.Finish())
+				err := s.responseHandler.updateRequestChannel(uint16(packetId), data)
 				if err != nil {
 					s.handleErrorEvent(err)
 					return
@@ -163,6 +172,9 @@ type Event_Ready struct {
 	Contacts []table.LSVerifyContactRowExists `skip:"1"`
 }
 
+func (pb *Event_Ready) SetIdentifier(identifier int16) {}
+
+
 func (e *Event_Ready) Finish() ResponseData {
 	e.CurrentUser = modules.SchedulerJSDefined.CurrentUserInitialData
 	e.Threads = modules.SchedulerJSRequired.LSTable.LSDeleteThenInsertThread
@@ -178,6 +190,8 @@ type Event_Error struct {
 	Err error
 }
 
+func (pb *Event_Error) SetIdentifier(identifier int16) {}
+
 func (e *Event_Error) Finish() ResponseData {
 	return e
 }
@@ -189,6 +203,8 @@ type Event_SocketClosed struct {
 	Code int
 	Text string
 }
+
+func (pb *Event_SocketClosed) SetIdentifier(identifier int16) {}
 
 func (e *Event_SocketClosed) Finish() ResponseData {
 	return e
@@ -207,6 +223,8 @@ func (pb *Event_PublishACK) GetPacketId() uint16 {
 	return pb.PacketId
 }
 
+func (pb *Event_PublishACK) SetIdentifier(identifier int16) {}
+
 func (pb *Event_PublishACK) Finish() ResponseData {
 	return pb
 }
@@ -221,6 +239,8 @@ func (pb *Event_SubscribeACK) GetPacketId() uint16 {
 	return pb.PacketId
 }
 
+func (pb *Event_SubscribeACK) SetIdentifier(identifier int16) {}
+
 func (pb *Event_SubscribeACK) Finish() ResponseData {
 	return pb
 }
@@ -232,6 +252,7 @@ type Event_PublishResponse struct {
 	Topic string `lengthType:"uint16" endian:"big"`
 	Data PublishResponseData `jsonString:"1"`
 	Table table.LSTable
+	MessageIdentifier int16
 }
 
 type PublishResponseData struct {
@@ -239,6 +260,10 @@ type PublishResponseData struct {
 	Payload   string `json:"payload,omitempty"`
 	Sp     []string `json:"sp,omitempty"` // dependencies
 	Target int      `json:"target,omitempty"`
+}
+
+func (pb *Event_PublishResponse) SetIdentifier(identifier int16) {
+	pb.MessageIdentifier = identifier
 }
 
 func (pb *Event_PublishResponse) Finish() ResponseData {

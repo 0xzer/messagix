@@ -91,6 +91,7 @@ func (m *ModuleParser) load() {
 	// when this is the case, the server "preloads" the js files in the link tags, so we need to loop through them until we can find the "LSVersion" module and extract the exported version string
 	if modules.VersionId == 0 {
 		m.client.configs.needSync = true
+		m.client.Logger.Info().Msg("Setting configs.needSync to true")
 		var doneCrawling bool
 		linkTags := m.findLinkTags(doc)
 		for _, tag := range linkTags {
@@ -160,7 +161,15 @@ func (m *ModuleParser) handleModule(data []interface{}) {
 						//debug.Debug().Any("csrBitmap", modules.CsrBitmap).Msg("handlePayload")
 				}
 			}
+		/*
+		add later if needed for the gkx data
+		case "HasteSupportData":
+			log.Println("got haste support data!")
+			m.client.Logger.Debug().Any("data", modData).Msg("Got haste support data")
+			os.Exit(1)
 		}
+		*/
+	}
 }
 
 func (m *ModuleParser) findScriptTags(n *html.Node) []ScriptTag {

@@ -3,11 +3,13 @@ package messagix
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"strconv"
+
 	"github.com/0xzer/messagix/graphql"
 	"github.com/0xzer/messagix/lightspeed"
-	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/table"
 	"github.com/0xzer/messagix/types"
 	"github.com/google/go-querystring/query"
@@ -57,6 +59,8 @@ func (g *GraphQL) makeGraphQLRequest(name string, variables interface{}) (*http.
 		return nil, nil, fmt.Errorf("failed to marshal graphql variables to json string: %e", err)
 	}
 
+	log.Println("sending graphql request:")
+	log.Println(string(vBytes))
 	siteConfig := g.client.configs.siteConfig
 	payload := &GraphQLPayload{
 		Av: siteConfig.AccountId,
@@ -105,20 +109,12 @@ func (g *GraphQL) makeGraphQLRequest(name string, variables interface{}) (*http.
 	return g.client.MakeRequest("https://www.facebook.com/api/graphql/", "POST", headers, payloadBytes, types.FORM)
 }
 
-func (g *GraphQL) makeLSRequest(db int, epochId int64, reqType int) (*table.LSTable, error) {
-	requestPayload := &graphql.LSPlatformGraphQLLightspeedVariables{
-		Database: db,
-		EpochID: epochId,
-		SyncParams: modules.SchedulerJSDefined.LSPlatformMessengerSyncParams.Mailbox,
-		LastAppliedCursor: nil,
-		Version: modules.VersionId,
-	}
-
-	strPayload, err := json.Marshal(requestPayload)
+func (g *GraphQL) makeLSRequest(variables *graphql.LSPlatformGraphQLLightspeedVariables, reqType int) (*table.LSTable, error) {
+	strPayload, err := json.Marshal(&variables)
 	if err != nil {
 		return nil, err
 	}
-
+	
 	lsVariables := &graphql.LSPlatformGraphQLLightspeedRequestPayload{
 		DeviceID: g.client.configs.mqttConfig.Cid,
 		IncludeChatVisibility: false,
@@ -133,6 +129,7 @@ func (g *GraphQL) makeLSRequest(db int, epochId int64, reqType int) (*table.LSTa
 		return nil, err
 	}
 
+	os.WriteFile("lsGraphQLResponse.json", respBody, os.ModePerm)
 	var graphQLData *graphql.LSPlatformGraphQLLightspeedRequestQuery
 	err = json.Unmarshal(respBody, &graphQLData)
 	if err != nil {

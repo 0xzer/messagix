@@ -24,7 +24,7 @@ type LSDeleteThenInsertThread struct {
     Snippet string `index:"2"`
     ThreadName string `index:"3"`
     ThreadPictureUrl string `index:"4"`
-    NeedsAdminApprovalForNewParticipant bool `index:"5"`
+    NeedsAdminApprovalForNewParticipant int64 `index:"5"`
     AuthorityLevel int64 `index:"6"`
     ThreadKey int64 `index:"7"`
     MailboxType int64 `index:"8"`
@@ -38,17 +38,17 @@ type LSDeleteThenInsertThread struct {
     GroupNotificationSettings int64 `index:"16"`
     IsAdminSnippet bool `index:"17"`
     SnippetSenderContactId int64 `index:"18"`
-    SnippetStringHash string `index:"21"`
-    SnippetStringArgument1 string `index:"22"`
+    SnippetStringHash int64 `index:"21"`
+    SnippetStringArgument1 int64 `index:"22"`
     SnippetAttribution int64 `index:"23"`
-    SnippetAttributionStringHash string `index:"24"`
+    SnippetAttributionStringHash int64 `index:"24"`
     DisappearingSettingTtl int64 `index:"25"`
     DisappearingSettingUpdatedTs int64 `index:"26"`
     DisappearingSettingUpdatedBy int64 `index:"27"`
     OngoingCallState int64 `index:"29"`
     CannotReplyReason int64 `index:"30"`
     CustomEmoji int64 `index:"31"`
-    CustomEmojiImageUrl string `index:"32"`
+    CustomEmojiImageUrl int64 `index:"32"`
     OutgoingBubbleColor int64 `index:"33"`
     ThemeFbid int64 `index:"34"`
     ParentThreadKey int64 `index:"35"`
@@ -58,47 +58,46 @@ type LSDeleteThenInsertThread struct {
     NullstateDescriptionType2 int64 `index:"39"`
     NullstateDescriptionText3 string `index:"40"`
     NullstateDescriptionType3 int64 `index:"41"`
-    DraftMessage string `index:"42"`
-    SnippetHasEmoji bool `index:"43"`
-    HasPersistentMenu bool `index:"44"`
-    DisableComposerInput bool `index:"45"`
-    CannotUnsendReason int64 `index:"46"`
-    ViewedPluginKey int64 `index:"47"`
-    ViewedPluginContext int64 `index:"48"`
-    ClientThreadKey int64 `index:"49"`
-    Capabilities int64 `index:"50"`
-    ShouldRoundThreadPicture bool `index:"51"`
-    ProactiveWarningDismissTime int64 `index:"52"`
-    IsCustomThreadPicture bool `index:"53"`
-    OtidOfFirstMessage int64 `index:"54"`
-    NormalizedSearchTerms int64 `index:"55"`
-    AdditionalThreadContext int64 `index:"56"`
-    DisappearingThreadKey int64 `index:"57"`
-    IsDisappearingMode bool `index:"58"`
-    DisappearingModeInitiator int64 `index:"59"`
-    UnreadDisappearingMessageCount int64 `index:"60"`
-    LastMessageCtaId int64 `index:"62"`
-    LastMessageCtaType int64 `index:"63"`
-    ConsistentThreadFbid int64 `index:"64"`
-    ThreadDescription int64 `index:"65"`
-    UnsendLimitMs int64 `index:"66"`
-    SyncGroup int64 `index:"67"`
-    ThreadInvitesEnabled int64 `index:"68"`
-    ThreadInviteLink string `index:"69"`
-    NumUnreadSubthreads int64 `index:"70"`
-    SubthreadCount int64 `index:"71"`
-    ThreadInvitesEnabledV2 int64 `index:"72"`
-    EventStartTimestampMs int64 `index:"73"`
-    EventEndTimestampMs int64 `index:"74"`
-    TakedownState int64 `index:"75"`
-    MemberCount int64 `index:"76"`
-    SecondaryParentThreadKey int64 `index:"77"`
-    IgFolder int64 `index:"78"`
-    InviterId int64 `index:"79"`
-    ThreadTags int64 `index:"80"`
-    ThreadStatus int64 `index:"81"`
-    ThreadSubtype int64 `index:"82"`
-    PauseThreadTimestamp int64 `index:"83"`
+    SnippetHasEmoji bool `index:"42"`
+    HasPersistentMenu bool `index:"43"`
+    DisableComposerInput bool `index:"44"`
+    CannotUnsendReason int64 `index:"45"`
+    ViewedPluginKey int64 `index:"46"`
+    ViewedPluginContext int64 `index:"47"`
+    ClientThreadKey int64 `index:"48"`
+    Capabilities int64 `index:"49"`
+    ShouldRoundThreadPicture int64 `index:"50"`
+    ProactiveWarningDismissTime int64 `index:"51"`
+    IsCustomThreadPicture bool `index:"52"`
+    OtidOfFirstMessage int64 `index:"53"`
+    NormalizedSearchTerms int64 `index:"54"`
+    AdditionalThreadContext int64 `index:"55"`
+    DisappearingThreadKey int64 `index:"56"`
+    IsDisappearingMode bool `index:"57"`
+    DisappearingModeInitiator int64 `index:"58"`
+    UnreadDisappearingMessageCount int64 `index:"59"`
+    LastMessageCtaId int64 `index:"61"`
+    LastMessageCtaType int64 `index:"62"`
+    ConsistentThreadFbid int64 `index:"63"`
+    ThreadDescription int64 `index:"64"`
+    UnsendLimitMs int64 `index:"65"`
+    SyncGroup int64 `index:"66"`
+    ThreadInvitesEnabled int64 `index:"67"`
+    ThreadInviteLink int64 `index:"68"`
+    NumUnreadSubthreads int64 `index:"69"`
+    SubthreadCount int64 `index:"70"`
+    ThreadInvitesEnabledV2 int64 `index:"71"`
+    EventStartTimestampMs int64 `index:"72"`
+    EventEndTimestampMs int64 `index:"73"`
+    TakedownState int64 `index:"74"`
+    MemberCount int64 `index:"75"`
+    SecondaryParentThreadKey int64 `index:"76"`
+    IgFolder int64 `index:"77"`
+    InviterId int64 `index:"78"`
+    ThreadTags int64 `index:"79"`
+    ThreadStatus int64 `index:"80"`
+    ThreadSubtype int64 `index:"81"`
+    PauseThreadTimestamp int64 `index:"82"`
 }
 
 type LSAddParticipantIdToGroupThread struct {

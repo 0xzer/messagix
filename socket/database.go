@@ -1,24 +1,17 @@
 package socket
 
-type QueryMetadata struct {
-	SendSyncParams bool
-}
+type SyncChannel int64
+const (
+	MailBox SyncChannel = 1
+	Contact SyncChannel = 2
+)
 
-var Queries = map[int64]QueryMetadata{
-	1: { SendSyncParams: false },
-	2: { SendSyncParams: false },
-	5: { SendSyncParams: true },
-	16: { SendSyncParams: true },
-	26: { SendSyncParams: true },
-	28: { SendSyncParams: true },
-	95: { SendSyncParams: false },
-	104: { SendSyncParams: true },
-	140: { SendSyncParams: true },
-	141: { SendSyncParams: true },
-	142: { SendSyncParams: true },
-	143: { SendSyncParams: true },
-	196: { SendSyncParams: true },
-	198: { SendSyncParams: true },
+type QueryMetadata struct {
+	DatabaseId int64
+	SendSyncParams bool
+	LastAppliedCursor interface{}
+	SyncParams interface{}
+	SyncChannel 
 }
 
 type SyncGroupsTask struct {

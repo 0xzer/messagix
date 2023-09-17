@@ -30,7 +30,8 @@ type LSMciTraceLog struct {
 type LSExecuteFirstBlockForSyncTransaction struct {
 	DatabaseId int64 `index:"0"`
 	EpochId int64 `index:"1"`
-	CurrentCursor string `index:"3"`
+    CurrentCursor string `index:"2"`
+	NextCursor string `index:"3"`
 	SyncStatus int64 `index:"4"`
 	SendSyncParams bool `index:"5"`
 	MinTimeToSyncTimestampMs int64 `index:"6"` // fix this, use conditionIndex
@@ -39,7 +40,7 @@ type LSExecuteFirstBlockForSyncTransaction struct {
 }
 
 type LSExecuteFinallyBlockForSyncTransaction struct {
-	Unknown0 bool `index:"0"`
+	ShouldFlush bool `index:"0"` // shouldFlush ? should sync ?
 	SyncDatabaseId int64 `index:"1"`
 	EpochId int64 `index:"2"`
 }
