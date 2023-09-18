@@ -11,10 +11,17 @@ type SendMessageTask struct {
 	Source table.ThreadSourceType `json:"source"`
 	SendType table.SendType `json:"send_type"`
 	SyncGroup int64 `json:"sync_group"`
+	ReplyMetaData *ReplyMetaData `json:"reply_metadata,omitempty"`
 	Text string `json:"text,omitempty"`
 	InitiatingSource table.InitiatingSource `json:"initiating_source"`
 	SkipUrlPreviewGen int32 `json:"skip_url_preview_gen"` // 0 or 1
 	TextHasLinks int32 `json:"text_has_links"` // 0 or 1
+}
+
+type ReplyMetaData struct {
+	ReplyMessageId string `json:"reply_source_id"`
+	ReplySourceType int64 `json:"reply_source_type"` // 1 ?
+	ReplyType int64 `json:"reply_type"` // ?
 }
 
 func (t *SendMessageTask) GetLabel() string {

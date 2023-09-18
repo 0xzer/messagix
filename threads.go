@@ -57,6 +57,11 @@ func (t *Threads) NewMessageBuilder(threadId int64) *MessageBuilder {
 	}
 }
 
+func (m *MessageBuilder) SetReplyMetadata(replyMetadata *socket.ReplyMetaData) *MessageBuilder {
+	m.payload.ReplyMetaData = replyMetadata
+	return m
+}
+
 func (m *MessageBuilder) SetSource(source table.ThreadSourceType) *MessageBuilder {
 	m.payload.Source = source
 	return m
