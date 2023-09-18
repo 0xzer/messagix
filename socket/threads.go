@@ -26,17 +26,36 @@ func (t *SendMessageTask) Create() (interface{}, interface{}) {
 	return t, queueName
 }
 
-type ThreadMarkRead struct {
+type ThreadMarkReadTask struct {
 	ThreadId            int64 `json:"thread_id"`
 	LastReadWatermarkTs int64 `json:"last_read_watermark_ts"`
 	SyncGroup           int64   `json:"sync_group"`
 }
 
-func (t *ThreadMarkRead) GetLabel() string {
+func (t *ThreadMarkReadTask) GetLabel() string {
 	return TaskLabels["ThreadMarkRead"]
 }
 
-func (t *ThreadMarkRead) Create() (interface{}, interface{}) {
+func (t *ThreadMarkReadTask) Create() (interface{}, interface{}) {
 	queueName := strconv.Itoa(int(t.ThreadId))
+	return t, queueName
+}
+
+type FetchMessagesTask struct {
+	ThreadKey int64 `json:"thread_key"`
+	Direction int64 `json:"direction"` // 0
+	ReferenceTimestampMs int64 `json:"reference_timestamp_ms"`
+	ReferenceMessageId string `json:"reference_message_id"`
+	SyncGroup int64 `json:"sync_group"` // 1
+	Cursor string `json:"cursor"`
+}
+
+func (t *FetchMessagesTask) GetLabel() string {
+	return TaskLabels["FetchMessagesTask"]
+}
+
+func (t *FetchMessagesTask) Create() (interface{}, interface{}) {
+	threadStr := strconv.Itoa(int(t.ThreadKey))
+	queueName := "mrq." + threadStr
 	return t, queueName
 }

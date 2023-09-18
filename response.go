@@ -1,11 +1,9 @@
 package messagix
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
-	"log"
-	"os"
-	"reflect"
-
 	"github.com/0xzer/messagix/byter"
 	"github.com/0xzer/messagix/packets"
 )
@@ -30,8 +28,7 @@ type Response struct {
 
 func (r *Response) Read(data []byte) error {
 	reader := byter.NewReader(data)
-	err := reader.ReadToStruct(r)
-	if err != nil {
+	if err := reader.ReadToStruct(r); err != nil {
 		return err
 	}
 
@@ -44,18 +41,16 @@ func (r *Response) Read(data []byte) error {
 	}
 	r.ResponseData = responseHandlerFunc()
 
+	bufferBytes := reader.Buff.Bytes()
+
 	if packetType == packets.PUBLISH && qosLevel == 1 {
-		identifier, err := reader.ReadInteger(reflect.Uint16, 2, "big")
-		if err != nil {
-			log.Fatalf("failed to read int16 message identifier from publish response packet with qos level 1: %e", err)
-		}
-		log.Println("got qos_level 1:", r.PacketByte)
-		log.Println("got message identifier:", identifier)
-		log.Println("data left:", reader.Buff.Len())
-		os.Exit(1)
+		identifierBytes := bufferBytes[10:12]
+		identifier := binary.BigEndian.Uint16(identifierBytes)
+		r.ResponseData.SetIdentifier(int16(identifier))
+		// remove the msg identifier
+		bufferBytes = append(bufferBytes[:10], bufferBytes[12:]...)
+		reader.Buff = bytes.NewBuffer(bufferBytes)
 	}
 
-	offset := len(data) - reader.Buff.Len()
-	remainingData := data[offset:]
-	return byter.NewReader(remainingData).ReadToStruct(r.ResponseData)
+	return reader.ReadToStruct(r.ResponseData)
 }

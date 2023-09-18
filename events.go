@@ -3,9 +3,6 @@ package messagix
 import (
 	"encoding/json"
 	"log"
-	"os"
-
-	"github.com/0xzer/messagix/debug"
 	"github.com/0xzer/messagix/lightspeed"
 	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/packets"
@@ -14,7 +11,7 @@ import (
 )
 
 func (s *Socket) handleBinaryMessage(data []byte) {
-	s.client.Logger.Debug().Any("hex-data", debug.BeautifyHex(data)).Bytes("bytes", data).Msg("Received BinaryMessage")
+	//s.client.Logger.Debug().Any("hex-data", debug.BeautifyHex(data)).Bytes("bytes", data).Msg("Received BinaryMessage")
 	if s.client.eventHandler == nil {
 		return
 	}
@@ -89,16 +86,15 @@ func (s *Socket) handleReadyEvent(data *Event_Ready) {
 		log.Fatal(err)
 	}
 
-	log.Println("sending task 145:")
-	log.Println(string(payload))
 	packetId, err = s.makeLSRequest(payload, 3)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	resp := s.responseHandler.waitForPubResponseDetails(packetId)
-	log.Println("got response from sync groups task:")
-	log.Println(resp.Data.Payload)
+	if resp == nil {
+		log.Fatalf("failed to receive response from task 145 request")
+	}
 
 	err = s.client.Account.ReportAppState(table.FOREGROUND)
 	if err != nil {
@@ -110,10 +106,8 @@ func (s *Socket) handleReadyEvent(data *Event_Ready) {
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("EnsureSyncedSocket failed to sync db 1: %e", err)
 	}
-
-	log.Println("synced data... for db 1")
 
 	s.client.eventHandler(data.Finish())
 }
@@ -138,20 +132,16 @@ func (s *Socket) handlePublishResponseEvent(resp *Event_PublishResponse) {
 	hasPacket := s.responseHandler.hasPacket(uint16(packetId))
 	switch resp.Topic {
 		case string(LS_RESP):
-			data := resp.Finish().(*Event_PublishResponse)
+			resp.Finish()
 			if hasPacket {
-				err := s.responseHandler.updateRequestChannel(uint16(packetId), data)
+				err := s.responseHandler.updateRequestChannel(uint16(packetId), resp)
 				if err != nil {
 					s.handleErrorEvent(err)
 					return
 				}
 				return
 			} else if packetId == 0 {
-				if len(resp.Table.LSInsertMessage) > 0 {
-					s.client.Logger.Info().Any("table", resp.Table).Msg("Got a new message!")
-					os.Exit(1)
-				}
-				s.client.Logger.Info().Any("packetId", packetId).Any("table", resp.Table).Any("data", resp.Data).Any("topic", resp.Topic).Msg("Got unknown socket event...")
+				s.client.eventHandler(resp)
 				return
 			}
 			s.client.Logger.Info().Any("packetId", packetId).Any("data", resp).Msg("Got publish response but was not expecting it for specific packet identifier.")
@@ -279,44 +269,4 @@ func (pb *Event_PublishResponse) Finish() ResponseData {
 	decoder := lightspeed.NewLightSpeedDecoder(dependencies, &pb.Table)
 	decoder.Decode(lsData.Steps)
 	return pb
-}
-
-// Event_NewMessage is emitted whenever the client receives an LSInsertMessage dependency in Event_PublishResponse's table field.
-type Event_NewMessage struct {
-	Message []table.LSInsertMessage // slice of LSInsertMessage because there could potentially be more?
-	MciTraceLog []table.LSMciTraceLog
-	ExecuteFirstBlockForSyncTransaction []table.LSExecuteFirstBlockForSyncTransaction
-	CheckAuthoritativeMessageExists []table.LSCheckAuthoritativeMessageExists
-	VerifyThreadExists []table.LSVerifyThreadExists
-	BumpThread []table.LSBumpThread
-	MoveThreadToInboxAndUpdateParent []table.LSMoveThreadToInboxAndUpdateParent
-	WriteThreadCapabilities []table.LSWriteThreadCapabilities
-	UpdateThreadSnippet []table.LSUpdateThreadSnippet
-	UpdateReadReceipt []table.LSUpdateReadReceipt
-	SetForwardScore []table.LSSetForwardScore
-	SetMessageDisplayedContentTypes []table.LSSetMessageDisplayedContentTypes
-	UpdateParticipantLastMessageSendTimestamp []table.LSUpdateParticipantLastMessageSendTimestamp
-	UpdateTypingIndicator []table.LSUpdateTypingIndicator
-	UpsertSequenceId []table.LSUpsertSequenceId
-	ExecuteFinallyBlockForSyncTransaction []table.LSExecuteFinallyBlockForSyncTransaction
-}
-
-func (nm *Event_NewMessage) Finish(table table.LSTable) *Event_NewMessage {
-	nm.Message = table.LSInsertMessage
-	nm.MciTraceLog = table.LSMciTraceLog
-	nm.ExecuteFirstBlockForSyncTransaction = table.LSExecuteFirstBlockForSyncTransaction
-	nm.CheckAuthoritativeMessageExists = table.LSCheckAuthoritativeMessageExists
-	nm.VerifyThreadExists = table.LSVerifyThreadExists
-	nm.BumpThread = table.LSBumpThread
-	nm.MoveThreadToInboxAndUpdateParent = table.LSMoveThreadToInboxAndUpdateParent
-	nm.WriteThreadCapabilities = table.LSWriteThreadCapabilities
-	nm.UpdateThreadSnippet = table.LSUpdateThreadSnippet
-	nm.UpdateReadReceipt = table.LSUpdateReadReceipt
-	nm.SetForwardScore = table.LSSetForwardScore
-	nm.SetMessageDisplayedContentTypes = table.LSSetMessageDisplayedContentTypes
-	nm.UpdateParticipantLastMessageSendTimestamp = table.LSUpdateParticipantLastMessageSendTimestamp
-	nm.UpdateTypingIndicator = table.LSUpdateTypingIndicator
-	nm.UpsertSequenceId = table.LSUpsertSequenceId
-	nm.ExecuteFinallyBlockForSyncTransaction = table.LSExecuteFinallyBlockForSyncTransaction
-	return nm
 }

@@ -106,3 +106,11 @@ type LSUpsertTheme struct {
     ComposerSecondaryButtonColor int64 `index:"38"`
     ComposerPlaceholderTextColor int64 `index:"39"`
 }
+
+type LSAppendDataTraceAddon struct {
+    TraceId string `index:"0"`
+    CheckPointId int64 `index:"1"`
+    SyncChannel int64 `index:"2"`
+    ErrorMessage string `index:"3"`
+    Tags string `index:"4"`
+}

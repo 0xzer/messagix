@@ -1,15 +1,3 @@
-# Messagix
-Messagix is a easy-to-use Go library for interacting with facebooks/metas lightspeed API.
-
-## Installation
-
-Use the [package manager](https://golang.org/dl/) to install messagix.
-```bash
-go get github.com/0xzer/messagix
-```
-
-# Simplistic Usage
-```go
 package client_test
 
 import (
@@ -74,4 +62,3 @@ func evHandler(evt interface{}) {
 			cli.Logger.Info().Any("data", evtData).Interface("type", evt).Msg("Got unknown event!")
 	}
 }
-```

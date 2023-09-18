@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type LightSpeedDecoder struct {
@@ -42,13 +43,13 @@ func (ls *LightSpeedDecoder) Decode(data interface{}) interface{} {
 		key, ok := stepData[0].(float64)
 		if !ok {
 			log.Println("[LOAD] failed to store key to float64")
-			return false
+			return 0
 		}
 		
 		shouldLoad, ok := ls.StatementReferences[int(key)]
 		if !ok {
 			log.Println("[LOAD] failed to fetch statement reference for key:", key)
-			return false
+			return 0
 		}
 		return shouldLoad
 	case STORE:
@@ -92,6 +93,10 @@ func (ls *LightSpeedDecoder) Decode(data interface{}) interface{} {
 				ls.Decode(stepData[2])
 			}
 		}
+	case NOT:
+		return ls.Decode(stepData[0]).(int64)
+	case NATIVE_OP_CURRENT_TIME:
+		return time.Now().UnixMilli()
 	default:
 		log.Println("got unknown step type:", stepType)
 		os.Exit(1)
@@ -147,19 +152,20 @@ func (ls *LightSpeedDecoder) handleStoredProcedure(referenceName string, data []
 		if val == nil { // skip setting field, because the index in the array was [9] which is undefined.
 			continue
 		}
-		
+		valType := reflect.TypeOf(val)
+
 		switch kind {
 		case reflect.Int64:
 			i64, ok := val.(int64)
 			if !ok {
-				log.Println(fmt.Sprintf("failed to set int64 to %v in dependency %v for field %v (index=%d)", val, depFieldsType.Name(), fieldInfo.Name, index))
+				log.Println(fmt.Sprintf("failed to set int64 to %v in dependency %v for field %v (index=%d, actualType=%v)", val, depFieldsType.Name(), fieldInfo.Name, index, valType))
 				continue
 			}
 			newDepInstance.Field(i).SetInt(i64)
 		case reflect.String:
 			str, ok := val.(string)
 			if !ok {
-				log.Println(fmt.Sprintf("failed to set string to %v in dependency %v for field %v (index=%d)", val, depFieldsType.Name(), fieldInfo.Name, index))
+				log.Println(fmt.Sprintf("failed to set string to %v in dependency %v for field %v (index=%d, actualType=%v)", val, depFieldsType.Name(), fieldInfo.Name, index, valType))
 				continue
 			}
 			newDepInstance.Field(i).SetString(str)
@@ -172,19 +178,19 @@ func (ls *LightSpeedDecoder) handleStoredProcedure(referenceName string, data []
 		case reflect.Bool:
 			boolean, ok := val.(bool)
 			if !ok {
-				log.Println(fmt.Sprintf("failed to set bool to %v in dependency %v for field %v (index=%d)", val, depFieldsType.Name(), fieldInfo.Name, index))
+				log.Println(fmt.Sprintf("failed to set bool to %v in dependency %v for field %v (index=%d, actualType=%v)", val, depFieldsType.Name(), fieldInfo.Name, index, valType))
 				continue
 			}
 			newDepInstance.Field(i).SetBool(boolean)
 		case reflect.Int:
 			integer, ok := val.(int)
 			if !ok {
-				log.Println(fmt.Sprintf("failed to set int to %v in dependency %v for field %v (index=%d)", val, depFieldsType.Name(), fieldInfo.Name, index))
+				log.Println(fmt.Sprintf("failed to set int to %v in dependency %v for field %v (index=%d, actualType=%v)", val, depFieldsType.Name(), fieldInfo.Name, index, valType))
 				continue
 			}
 			newDepInstance.Field(i).SetInt(int64(integer))
 		default:
-			log.Println("invalid kind:", kind, val)
+			log.Println("invalid kind:", kind, val, valType)
 			os.Exit(1)
 		}
 	}

@@ -162,19 +162,113 @@ type LSUpdateThreadSnippet struct {
 
 type LSVerifyThreadExists struct {
     ThreadKey int64 `index:"0"`
-    MailboxType int64 `index:"1"`
-    ThreadType string `index:"2"`
-    FolderName string `index:"3"`
-    LastReadWatermarkTimestampMs int64 `index:"4"`
-    RemoveWatermarkTimestampMs int64 `index:"5"`
-    OngoingCallState int64 `index:"6"`
-    ParentThreadKey int64 `index:"7"`
-    AuthorityLevel int64 `index:"8"`
-    UnsendLimitMs int64 `index:"9"`
+    ThreadType int64 `index:"1"`
+    FolderName string `index:"2"`
+    ParentThreadKey int64 `index:"3"`
+    AuthorityLevel int64 `index:"4"`
 }
 
 type LSBumpThread struct {
     LastReadWatermarkTimestampMs int64 `index:"0"`
     Unknown1 int64 `index:"1"`
     ThreadKey int64 `index:"2"`
+}
+
+// Idk which snippet is the correct, there's like 6 (snippet, snippetStringHash, snippetStringArgument1, snippetAttribution, snippetAttributionStringHash)
+type LSUpdateThreadSnippetFromLastMessage struct {
+    AccountId int64 `index:"0"`
+    ThreadKey int64 `index:"1"`
+    Snippet1 string `index:"2"`
+    Snippet2 string `index:"3"`
+    Snippet3 string `index:"4"`
+    Snippet4 string `index:"5"`
+    Snippet5 string `index:"6"`
+    Snippet6 string `index:"7"`
+    Snippet7 string `index:"8"`
+    Snippet8 string `index:"9"`
+    Snippet9 string `index:"10"`
+    IsAdminSnippet bool `index:"11"`
+}
+
+type LSDeleteBannersByIds struct {
+    ThreadKey int64 `index:"0"`
+}
+
+type LSUpdateDeliveryReceipt struct {
+    DeliveredWatermarkTimestampMs int64 `index:"0"`
+    ThreadKey int64 `index:"1"`
+    ContactId int64 `index:"2"`
+}
+
+type LSUpdateOptimisticContextThreadKeys struct {
+    ThreadKey1 int64 `index:"0"`
+    ThreadKey2 int64 `index:"1"`
+}
+
+type LSReplaceOptimisticThread struct {
+    ThreadKey1 int64 `index:"0"`
+    ThreadKey2 int64 `index:"1"`
+}
+
+type LSApplyNewGroupThread struct {
+    OtidOfFirstMessage string `index:"0"`
+    ThreadKey int64 `index:"1"`
+    ThreadType int64 `index:"2"`
+    FolderName string `index:"3"`
+    ParentThreadKey int64 `index:"4"`
+    ThreadPictureUrlFallback string `index:"5"`
+    LastActivityTimestampMs int64 `index:"6"`
+    LastReadWatermarkTimestampMs int64 `index:"6"`
+    NullstateDescriptionText1 string `index:"8"`
+    NullstateDescriptionType1 int64 `index:"9"`
+    NullstateDescriptionText2 string `index:"10"`
+    NullstateDescriptionType2 int64 `index:"11"`
+    CannotUnsendReason int64 `index:"12"`
+    Capabilities int64 `index:"13"`
+    InviterId int64 `index:"14"`
+    IgFolder int64 `index:"15"`
+    ThreadSubtype int64 `index:"16"`
+}
+
+type LSRemoveAllParticipantsForThread struct {
+    ThreadKey int64 `index:"0"`
+}
+
+type LSUpdateThreadInviteLinksInfo struct {
+    ThreadKey int64 `index:"0"`
+    ThreadInvitesEnabled int64 `index:"1"` // 0 or 1
+    ThreadInviteLink string `index:"2"`
+}
+
+type LSUpdateThreadParticipantAdminStatus struct {
+    ThreadKey int64 `index:"0"`
+    ContactId int64 `index:"1"`
+    IsAdmin bool `index:"2"`
+}
+
+type LSUpdateParticipantSubscribeSourceText struct {
+    ThreadKey int64 `index:"0"`
+    ContactId int64 `index:"1"`
+    SubscribeSource string `index:"2"`
+}
+
+type LSOverwriteAllThreadParticipantsAdminStatus struct {
+    ThreadKey int64 `index:"0"`
+    IsAdmin bool `index:"1"`
+}
+
+type LSUpdateParticipantCapabilities struct {
+    ContactId int64 `index:"0"`
+    ThreadKey int64 `index:"1"`
+}
+
+type LSChangeViewerStatus struct {
+    ThreadKey int64 `index:"0"`
+    CannotReplyReason string `index:"1"`
+}
+
+type LSSyncUpdateThreadName struct {
+    ThreadName string `index:"0"`
+    ThreadKey int64 `index:"1"`
+    ThreadName1 string `index:"2"`
 }

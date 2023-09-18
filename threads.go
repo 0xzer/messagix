@@ -10,15 +10,37 @@ import (
 	"github.com/0xzer/messagix/socket"
 )
 
-
 type Threads struct {
 	client *Client
+}
+
+func (t *Threads) FetchMessages(ThreadId int64, ReferenceTimestampMs int64, ReferenceMessageId string, Cursor string) (*table.LSTable, error) {
+	tskm := t.client.NewTaskManager()
+	tskm.AddNewTask(&socket.FetchMessagesTask{ThreadKey: ThreadId, Direction: 0, ReferenceTimestampMs: ReferenceTimestampMs, ReferenceMessageId: ReferenceMessageId, SyncGroup: 1, Cursor: Cursor})
+
+	payload, err := tskm.FinalizePayload()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	packetId, err := t.client.socket.makeLSRequest(payload, 3)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+
+	resp := t.client.socket.responseHandler.waitForPubResponseDetails(packetId)
+	if resp == nil {
+		return nil, fmt.Errorf("failed to receive response from socket while trying to fetch messages. (packetId=%d, thread_key=%d, cursor=%s, reference_message_id=%s, reference_timestamp_ms=%d)", packetId, ThreadId, Cursor, ReferenceMessageId, ReferenceTimestampMs)
+	}
+
+	return &resp.Table, nil
 }
 
 type MessageBuilder struct {
 	client *Client
 	payload *socket.SendMessageTask
-	readPayload *socket.ThreadMarkRead
+	readPayload *socket.ThreadMarkReadTask
 }
 
 func (t *Threads) NewMessageBuilder(threadId int64) *MessageBuilder {
@@ -29,7 +51,7 @@ func (t *Threads) NewMessageBuilder(threadId int64) *MessageBuilder {
 			SkipUrlPreviewGen: 0,
 			TextHasLinks: 0,
 		},
-		readPayload: &socket.ThreadMarkRead{
+		readPayload: &socket.ThreadMarkReadTask{
 			ThreadId: threadId,
 		},
 	}

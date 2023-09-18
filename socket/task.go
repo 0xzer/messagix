@@ -10,7 +10,8 @@ var TaskLabels = map[string]string{
 	"ThreadMarkRead": "21",
 	"GetContactsFullTask": "207",
 	"ReportAppStateTask": "123",
-	"SyncGroupsTask": "145", 
+	"SyncGroupsTask": "145",
+	"FetchMessagesTask": "228",
 }
 
 type Task interface {

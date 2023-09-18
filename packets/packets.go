@@ -9,6 +9,9 @@ const (
 
     SUBSCRIBE = 8  // SUBSCRIBE packet without any flags
 	SUBACK = 9 // SUBSCRIBE ACKNOWLEDGMENT packet
+
+	PINGREQ = 12 // PING_REQ packet without any flags
+	PINGRESP = 13 // PING_RESP packet without any flags
 )
 
 const (

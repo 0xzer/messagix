@@ -47,12 +47,10 @@ func (sm *SyncManager) EnsureSyncedSocket(databases []int64) error {
 			return fmt.Errorf("could not find sync store for database: %d", db)
 		}
 
-		lsData, err := sm.SyncSocketData(db, database)
+		_, err := sm.SyncSocketData(db, database)
 		if err != nil {
-			log.Fatalf("failed to ensure database is synced through socket: (databaseId=%d)", db)
+			return fmt.Errorf("failed to ensure database is synced through socket: (databaseId=%d)", db)
 		}
-
-		sm.client.Logger.Info().Any("lsData", lsData).Msg("Got lsdata...")
 	}
 
 	return nil
@@ -76,18 +74,17 @@ func (sm *SyncManager) SyncSocketData(databaseId int64, db *socket.QueryMetadata
 
 	jsonPayload, err := json.Marshal(&payload)
 	if err != nil {
-		log.Fatalf("failed to marshal DatabaseQuery struct into json bytes (databaseId=%d): %e", databaseId, err)
+		return nil, fmt.Errorf("failed to marshal DatabaseQuery struct into json bytes (databaseId=%d): %e", databaseId, err)
 	}
-	log.Println("sending socket sync request:")
-	log.Println(string(jsonPayload))
+
 	packetId, err := sm.client.socket.makeLSRequest(jsonPayload, t)
 	if err != nil {
-		log.Fatalf("failed to make lightspeed socket request with DatabaseQuery byte payload (databaseId=%d): %e", databaseId, err)
+		return nil, fmt.Errorf("failed to make lightspeed socket request with DatabaseQuery byte payload (databaseId=%d): %e", databaseId, err)
 	}
 
 	resp := sm.client.socket.responseHandler.waitForPubResponseDetails(packetId)
 	if resp == nil {
-		log.Fatalf("timed out while waiting for sync response from socket (databaseId=%d)", databaseId)
+		return nil, fmt.Errorf("timed out while waiting for sync response from socket (databaseId=%d)", databaseId)
 	}
 	resp.Finish()
 
@@ -95,7 +92,6 @@ func (sm *SyncManager) SyncSocketData(databaseId int64, db *socket.QueryMetadata
 	nextCursor, currentCursor := block.NextCursor, block.CurrentCursor
 
 	if nextCursor == currentCursor {
-		sm.client.Logger.Info().Any("resp", resp).Any("databaseId", databaseId).Msg("database sync socket response")
 		return &resp.Table, nil
 	}
 
@@ -108,7 +104,6 @@ func (sm *SyncManager) SyncSocketData(databaseId int64, db *socket.QueryMetadata
 		return nil, err
 	}
 
-	sm.client.Logger.Info().Any("nextCursor", nextCursor).Any("cursorBefore", currentCursor).Msg("Updated cursor!")
 	return sm.SyncSocketData(databaseId, db)
 }
 
@@ -154,7 +149,7 @@ func (sm *SyncManager) SyncTransactions(transactions []table.LSExecuteFirstBlock
 		database.LastAppliedCursor = transaction.NextCursor
 		database.SendSyncParams = transaction.SendSyncParams
 		database.SyncChannel = socket.SyncChannel(transaction.SyncChannel)
-		sm.client.Logger.Info().Any("new_cursor", database.LastAppliedCursor).Any("syncChannel", database.SyncChannel).Any("sendSyncParams", database.SendSyncParams).Any("database_id", transaction.DatabaseId).Msg("Updated database by transaction...")
+		//sm.client.Logger.Info().Any("new_cursor", database.LastAppliedCursor).Any("syncChannel", database.SyncChannel).Any("sendSyncParams", database.SendSyncParams).Any("database_id", transaction.DatabaseId).Msg("Updated database by transaction...")
 	}
 
 	return nil

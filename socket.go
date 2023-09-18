@@ -4,12 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"sync"
 	"time"
-
-	"github.com/0xzer/messagix/debug"
 	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/packets"
 	"github.com/gorilla/websocket"
@@ -79,7 +76,6 @@ func (s *Socket) beginReadStream() {
 	for {
 		messageType, p, err := s.conn.ReadMessage()
 		if err != nil {
-			log.Fatal(err)
 			s.handleErrorEvent(fmt.Errorf("error reading message from websocket: %s", err.Error()))
 			return
 		}
@@ -94,7 +90,7 @@ func (s *Socket) beginReadStream() {
 }
 
 func (s *Socket) sendData(data []byte) error {
-	s.client.Logger.Debug().Any("hex", debug.BeautifyHex(data)).Msg("Sending data to socket")
+	//s.client.Logger.Debug().Any("hex", debug.BeautifyHex(data)).Msg("Sending data to socket")
 	err := s.conn.WriteMessage(websocket.BinaryMessage, data)
     if err != nil {
         e := fmt.Errorf("error sending data to websocket: %s", err.Error())
@@ -149,7 +145,7 @@ func (s *Socket) sendSubscribePacket(topic Topic, qos packets.QoS, wait bool) (*
 		}
 	}
 
-	s.client.Logger.Debug().Any("resp", resp).Any("topic", topic).Msg("Successfully subscribed to topic!")
+	//s.client.Logger.Debug().Any("resp", resp).Any("topic", topic).Msg("Successfully subscribed to topic!")
 	return resp, nil
 }
 
@@ -159,7 +155,7 @@ func (s *Socket) sendPublishPacket(topic Topic, jsonData string, packet *packets
 		return packetId, err
 	}
 
-	log.Println(string(publishRequestPayload))
+	//log.Println(string(publishRequestPayload))
 	s.responseHandler.addPacketChannel(packetId)
 	//s.client.Logger.Debug().Any("packetId", packetId).Msg("sending publish request!")
 	return packetId, s.sendData(publishRequestPayload)
