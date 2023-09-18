@@ -3,7 +3,6 @@ package messagix
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -59,8 +58,7 @@ func (g *GraphQL) makeGraphQLRequest(name string, variables interface{}) (*http.
 		return nil, nil, fmt.Errorf("failed to marshal graphql variables to json string: %e", err)
 	}
 
-	log.Println("sending graphql request:")
-	log.Println(string(vBytes))
+
 	siteConfig := g.client.configs.siteConfig
 	payload := &GraphQLPayload{
 		Av: siteConfig.AccountId,
