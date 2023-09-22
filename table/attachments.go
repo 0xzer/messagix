@@ -151,7 +151,7 @@ type LSInsertBlobAttachment struct {
     PlayableUrlFallback string `index:"4"`
     PlayableUrlExpirationTimestampMs int64 `index:"5"`
     PlayableUrlMimeType string `index:"6"`
-    DashManifest int64 `index:"7"`
+    DashManifest string `index:"7"`
     PreviewUrl string `index:"8"`
     PreviewUrlFallback string `index:"9"`
     PreviewUrlExpirationTimestampMs int64 `index:"10"`

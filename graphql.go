@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
-
 	"github.com/0xzer/messagix/graphql"
 	"github.com/0xzer/messagix/lightspeed"
 	"github.com/0xzer/messagix/table"
@@ -14,40 +12,7 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
-type GraphQLPayload struct {
-	Av                   string `url:"av,omitempty"` // not required
-	User                 string `url:"__user,omitempty"` // not required
-	A                    string `url:"__a,omitempty"` // 1 or 0 wether to include "suggestion_keys" or not in the response - no idea what this is
-	Req                  string `url:"__req,omitempty"` // not required
-	Hs                   string `url:"__hs,omitempty"` // not required
-	Dpr                  string `url:"dpr,omitempty"` // not required
-	Ccg                  string `url:"__ccg,omitempty"` // not required
-	Rev                  string `url:"__rev,omitempty"` // not required
-	S                    string `url:"__s,omitempty"` // not required
-	Hsi                  string `url:"__hsi,omitempty"` // not required
-	Dyn                  string `url:"__dyn,omitempty"` // not required
-	Csr                  string `url:"__csr,omitempty"` // not required
-	CometReq             string `url:"__comet_req,omitempty"` // not required but idk what this is
-	FbDtsg               string `url:"fb_dtsg,omitempty"`
-	Jazoest              string `url:"jazoest,omitempty"` // not required
-	Lsd                  string `url:"lsd,omitempty"` // not required
-	SpinR                string `url:"__spin_r,omitempty"` // not required
-	SpinB                string `url:"__spin_b,omitempty"` // not required
-	SpinT                string `url:"__spin_t,omitempty"` // not required
-	FbAPICallerClass     string `url:"fb_api_caller_class,omitempty"` // not required
-	FbAPIReqFriendlyName string `url:"fb_api_req_friendly_name,omitempty"` // not required
-	Variables            string `url:"variables,omitempty"`
-	ServerTimestamps     string `url:"server_timestamps,omitempty"` // "true" or "false"
-	DocID                string `url:"doc_id,omitempty"`
-}
-
-type GraphQL struct {
-	client *Client
-	lsRequests int
-	graphQLRequests int
-}
-
-func (g *GraphQL) makeGraphQLRequest(name string, variables interface{}) (*http.Response, []byte, error) {
+func (c *Client) makeGraphQLRequest(name string, variables interface{}) (*http.Response, []byte, error) {
 	graphQLDoc, ok := graphql.GraphQLDocs[name]
 	if !ok {
 		return nil, nil, fmt.Errorf("could not find graphql doc by the name of: %s", name)
@@ -59,34 +24,14 @@ func (g *GraphQL) makeGraphQLRequest(name string, variables interface{}) (*http.
 	}
 
 
-	siteConfig := g.client.configs.siteConfig
-	payload := &GraphQLPayload{
-		Av: siteConfig.AccountId,
-		User: siteConfig.AccountId,
-		A: "1",
-		Req: strconv.Itoa(g.graphQLRequests),
-		Hs: siteConfig.HasteSession,
-		Dpr: "1",
-		Ccg: siteConfig.ConnectionClass,
-		Rev: siteConfig.SpinR,
-		S: siteConfig.WebSessionId,
-		Hsi: siteConfig.HasteSessionId,
-		Dyn: siteConfig.Bitmap.CompressedStr,
-		Csr: siteConfig.CSRBitmap.CompressedStr,
-		CometReq: siteConfig.CometReq,
-		FbDtsg: siteConfig.FbDtsg,
-		Jazoest: siteConfig.Jazoest,
-		Lsd: siteConfig.LsdToken,
-		SpinR: siteConfig.SpinR,
-		SpinB: siteConfig.SpinB,
-		SpinT: siteConfig.SpinT,
-		FbAPICallerClass: graphQLDoc.CallerClass,
-		FbAPIReqFriendlyName: graphQLDoc.FriendlyName,
-		Variables: string(vBytes),
-		ServerTimestamps: "true",
-		DocID: graphQLDoc.DocId,
-	}
-	g.graphQLRequests++
+	payload := c.NewHttpQuery()
+	payload.FbAPICallerClass = graphQLDoc.CallerClass
+	payload.FbAPIReqFriendlyName = graphQLDoc.FriendlyName
+	payload.Variables = string(vBytes)
+	payload.ServerTimestamps = "true"
+	payload.DocID = graphQLDoc.DocId
+
+	c.graphQLRequests++
 
 	form, err := query.Values(payload)
 	if err != nil {
@@ -95,7 +40,7 @@ func (g *GraphQL) makeGraphQLRequest(name string, variables interface{}) (*http.
 
 	payloadBytes := []byte(form.Encode())
 
-	headers := g.client.buildHeaders()
+	headers := c.buildHeaders()
 	headers.Add("x-fb-friendly-name", graphQLDoc.FriendlyName)
 	headers.Add("sec-fetch-dest", "empty")
 	headers.Add("sec-fetch-mode", "cors")
@@ -104,25 +49,25 @@ func (g *GraphQL) makeGraphQLRequest(name string, variables interface{}) (*http.
 	headers.Add("referer", "https://www.facebook.com/messages/")
 
 	//g.client.Logger.Debug().Any("headers", headers).Any("payload", string(payloadBytes)).Msg("Sending graphQL request")
-	return g.client.MakeRequest("https://www.facebook.com/api/graphql/", "POST", headers, payloadBytes, types.FORM)
+	return c.MakeRequest("https://www.facebook.com/api/graphql/", "POST", headers, payloadBytes, types.FORM)
 }
 
-func (g *GraphQL) makeLSRequest(variables *graphql.LSPlatformGraphQLLightspeedVariables, reqType int) (*table.LSTable, error) {
+func (c *Client) makeLSRequest(variables *graphql.LSPlatformGraphQLLightspeedVariables, reqType int) (*table.LSTable, error) {
 	strPayload, err := json.Marshal(&variables)
 	if err != nil {
 		return nil, err
 	}
 	
 	lsVariables := &graphql.LSPlatformGraphQLLightspeedRequestPayload{
-		DeviceID: g.client.configs.mqttConfig.Cid,
+		DeviceID: c.configs.mqttConfig.Cid,
 		IncludeChatVisibility: false,
-		RequestID: g.lsRequests,
+		RequestID: c.lsRequests,
 		RequestPayload: string(strPayload),
 		RequestType: reqType,
 	}
-	g.lsRequests++
+	c.lsRequests++
 
-	_, respBody, err := g.makeGraphQLRequest("LSGraphQLRequest", &lsVariables)
+	_, respBody, err := c.makeGraphQLRequest("LSGraphQLRequest", &lsVariables)
 	if err != nil {
 		return nil, err
 	}

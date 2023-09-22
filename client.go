@@ -23,12 +23,14 @@ type Client struct {
 	http *http.Client
 	socket *Socket
 	eventHandler EventHandler
-	graphQl *GraphQL
 	configs *Configs
 	syncManager *SyncManager
 
 	cookies *types.Cookies
 	proxy Proxy
+
+	lsRequests int
+	graphQLRequests int
 }
 
 // pass an empty zerolog.Logger{} for no logging
@@ -43,6 +45,8 @@ func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Cli
 		},
 		cookies: cookies,
 		Logger: logger,
+		lsRequests: 0,
+		graphQLRequests: 1,
 	}
 
 	if proxy != "" {
@@ -51,7 +55,7 @@ func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Cli
 			log.Fatalf("failed to set proxy: %e", err)
 		}
 	}
-	
+
 	socket := cli.NewSocketClient()
 	cli.socket = socket
 

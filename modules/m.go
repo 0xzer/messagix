@@ -85,7 +85,7 @@ func HandleJSON(data []byte, id string) error {
 var CsrBitmap = make([]int, 0)
 var Bitmap = make([]int, 0)
 
-func interfaceToStructJSON(data interface{}, i interface{}) error {
+func InterfaceToStructJSON(data interface{}, i interface{}) error {
 	b, err := json.Marshal(&data)
 	if err != nil {
 		return err
@@ -119,7 +119,7 @@ func handleDefine(modName string, data []interface{}) error {
 					continue
 				}
 		
-				err := interfaceToStructJSON(config, field.Addr().Interface())
+				err := InterfaceToStructJSON(config, field.Addr().Interface())
 				if err != nil {
 					return err
 				}
@@ -145,7 +145,7 @@ func handleRequire(modName string, data []interface{}) error {
 							}
 							for _, req := range requestsMap {
 								var reqData *graphql.GraphQLPreloader
-								err := interfaceToStructJSON(req, &reqData)
+								err := InterfaceToStructJSON(req, &reqData)
 								if err != nil {
 									continue
 								}
@@ -189,7 +189,7 @@ func handleRequire(modName string, data []interface{}) error {
 
 func handleLightSpeedQLRequest(data interface{}) {
 	var lsData *graphql.LSPlatformGraphQLLightspeedRequestQuery
-	err := interfaceToStructJSON(&data, &lsData)
+	err := InterfaceToStructJSON(&data, &lsData)
 	if err != nil {
 		log.Fatalf("failed to parse LightSpeedQLRequest data from html: %e", err)
 	}

@@ -24,7 +24,7 @@ type LSDeleteThenInsertThread struct {
     Snippet string `index:"2"`
     ThreadName string `index:"3"`
     ThreadPictureUrl string `index:"4"`
-    NeedsAdminApprovalForNewParticipant int64 `index:"5"`
+    NeedsAdminApprovalForNewParticipant bool `index:"5"`
     AuthorityLevel int64 `index:"6"`
     ThreadKey int64 `index:"7"`
     MailboxType int64 `index:"8"`
@@ -70,7 +70,7 @@ type LSDeleteThenInsertThread struct {
     ProactiveWarningDismissTime int64 `index:"51"`
     IsCustomThreadPicture bool `index:"52"`
     OtidOfFirstMessage int64 `index:"53"`
-    NormalizedSearchTerms int64 `index:"54"`
+    NormalizedSearchTerms string `index:"54"`
     AdditionalThreadContext int64 `index:"55"`
     DisappearingThreadKey int64 `index:"56"`
     IsDisappearingMode bool `index:"57"`
@@ -83,7 +83,7 @@ type LSDeleteThenInsertThread struct {
     UnsendLimitMs int64 `index:"65"`
     SyncGroup int64 `index:"66"`
     ThreadInvitesEnabled int64 `index:"67"`
-    ThreadInviteLink int64 `index:"68"`
+    ThreadInviteLink string `index:"68"`
     NumUnreadSubthreads int64 `index:"69"`
     SubthreadCount int64 `index:"70"`
     ThreadInvitesEnabledV2 int64 `index:"71"`
@@ -108,7 +108,7 @@ type LSAddParticipantIdToGroupThread struct {
     DeliveredWatermarkTimestampMs int64 `index:"4"`
     Nickname string `index:"5"`
     IsAdmin bool `index:"6"`
-    SubscribeSource int64 `index:"7"`
+    SubscribeSource string `index:"7"`
     AuthorityLevel int64 `index:"9"`
     NormalizedSearchTerms int64 `index:"10"`
     IsSuperAdmin bool `index:"11"`

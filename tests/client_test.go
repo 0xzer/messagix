@@ -3,6 +3,7 @@ package client_test
 import (
 	"log"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/0xzer/messagix"
@@ -13,6 +14,7 @@ import (
 var cli *messagix.Client
 
 func TestClient(t *testing.T) {
+	
 	cookies := types.NewCookiesFromString("")
 
 	cli = messagix.NewClient(cookies, debug.NewLogger(), "")
@@ -44,12 +46,21 @@ func evHandler(evt interface{}) {
 			Any("total_contacts", len(evtData.Contacts)).
 			Msg("Client is ready!")
 
-			contacts, err := cli.Account.GetContacts(100)
+			mediaData, _ := os.ReadFile("test.jpeg")
+			payload, header := cli.NewMercuryMediaPayload("test_image.jpg", messagix.IMAGE_JPEG, mediaData)
+		
+			resp, err := cli.SendMercuryUploadRequest(payload, header)
 			if err != nil {
-				log.Fatalf("failed to get contacts: %e", err)
+				log.Fatal(err)
+			}
+			
+			imageData, ok := resp.Payload.Metadata.(*types.ImageMetadata)
+			if !ok {
+				log.Fatalf("got invalid image metadata (actualType=%v)", reflect.TypeOf(resp.Payload.Metadata))
 			}
 
-			cli.Logger.Info().Any("data", contacts).Msg("Contacts Response")
+			log.Println(imageData)
+			os.Exit(1)
 		case *messagix.Event_PublishResponse:
 			cli.Logger.Info().Any("evtData", evtData).Msg("Got new event!")
 		case *messagix.Event_Error:

@@ -2,7 +2,7 @@ package table
 
 type DisplayedContentTypes int64
 const (
-	TEXT DisplayedContentTypes = 1
+	TEXT_MSG DisplayedContentTypes = 1
 )
 
 type Gender int64
@@ -118,7 +118,9 @@ const (
 type SendType int64
 const (
    UNKNOWN_SEND_TYPE SendType = 0
-   DEFAULT SendType = 1
+   TEXT SendType = 1
+   STICKER SendType = 2
+   MEDIA SendType = 3
 )
 
 type InitiatingSource int64

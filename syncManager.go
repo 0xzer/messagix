@@ -125,7 +125,7 @@ func (sm *SyncManager) SyncDataGraphQL(dbs []int64) (*table.LSTable, error) {
 			variables.SyncParams = sm.getSyncParams(database.SyncChannel)
 		}
 
-		lsTable, err := sm.client.graphQl.makeLSRequest(variables, 1)
+		lsTable, err := sm.client.makeLSRequest(variables, 1)
 		if err != nil {
 			return nil, err
 		}

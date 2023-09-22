@@ -71,7 +71,6 @@ func (c *Configs) SetupConfigs() error {
 	}
 
 	c.client.syncManager.syncParams = &modules.SchedulerJSDefined.LSPlatformMessengerSyncParams
-	c.client.graphQl = &GraphQL{client: c.client, lsRequests: 0, graphQLRequests: 1}
 	if c.needSync {
 		err := c.client.syncManager.UpdateDatabaseSyncParams(
 			[]*socket.QueryMetadata{

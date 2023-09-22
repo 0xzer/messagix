@@ -8,11 +8,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
 	"github.com/google/uuid"
 )
 
-var Charset = []rune("abcdefghijklmnopqrstuvwxyz1234567890")
+var Charset = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890")
 
 func GenerateTimestampString() string {
 	return strconv.Itoa(int(time.Now().UnixMilli()))
@@ -33,7 +32,8 @@ func RandStr(length int) string {
 }
 
 func GenerateWebsessionID() string {
-	return RandStr(6) + ":" + RandStr(6) + ":" + RandStr(6)
+	str := RandStr(6) + ":" + RandStr(6) + ":" + RandStr(6)
+	return strings.ToLower(str)
 }
 
 func GenerateEpochId() int64 {

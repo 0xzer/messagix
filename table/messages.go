@@ -29,7 +29,7 @@ type LSUpsertMessage struct {
     MentionLengths int64 `index:"20"`
     MentionIds int64 `index:"21"`
     MentionTypes int64 `index:"22"`
-    ReplySourceId int64 `index:"23"`
+    ReplySourceId string `index:"23"`
     ReplySourceType int64 `index:"24"`
     ReplySourceTypeV2 int64 `index:"25"`
     ReplyStatus int64 `index:"26"`
@@ -40,7 +40,7 @@ type LSUpsertMessage struct {
     ReplyMediaUrl string `index:"31"`
     ReplyMediaPreviewWidth int64 `index:"33"`
     ReplyMediaPreviewHeight int64 `index:"34"`
-    ReplyMediaUrlMimeType int64 `index:"35"`
+    ReplyMediaUrlMimeType string `index:"35"`
     ReplyMediaUrlFallback string `index:"36"`
     ReplyCtaId int64 `index:"37"`
     ReplyCtaTitle string `index:"38"`
@@ -279,4 +279,10 @@ type LSDeleteThenInsertMessage struct {
 type LSReplaceOptimsiticMessage struct {
     OfflineThreadingId string `index:"0"`
     MessageId string `index:"1"`
+}
+
+type LSSetMessageTextHasLinks struct {
+    ThreadKey int64 `index:"0"`
+    MessageId string `index:"1"`
+    TimestampMs int64 `index:"2"`
 }

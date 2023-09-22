@@ -79,9 +79,11 @@ type LSTable struct {
 	LSInsertSearchResult []LSInsertSearchResult
 	LSInsertSearchSection []LSInsertSearchSection
 	LSSyncUpdateThreadName []LSSyncUpdateThreadName
+	LSSetMessageTextHasLinks []LSSetMessageTextHasLinks
 }
 
 var SPTable = map[string]string{
+	"setMessageTextHasLinks": "LSSetMessageTextHasLinks",
 	"syncUpdateThreadName": "LSSyncUpdateThreadName",
 	"insertSearchSection": "LSInsertSearchSection",
 	"insertSearchResult": "LSInsertSearchResult",

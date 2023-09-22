@@ -57,6 +57,10 @@ func (t *Threads) NewMessageBuilder(threadId int64) *MessageBuilder {
 	}
 }
 
+func (m *MessageBuilder) SetMediaIDs(ids []int64) {
+	m.payload.AttachmentFBIds = ids
+}
+
 func (m *MessageBuilder) SetReplyMetadata(replyMetadata *socket.ReplyMetaData) *MessageBuilder {
 	m.payload.ReplyMetaData = replyMetadata
 	return m
@@ -71,12 +75,6 @@ func (m *MessageBuilder) SetInitiatingSource(initatingSource table.InitiatingSou
 	m.payload.InitiatingSource = initatingSource
 	return m
 }
-
-func (m *MessageBuilder) SetSendType(sendType table.SendType) *MessageBuilder {
-	m.payload.SendType = sendType
-	return m
-}
-
 
 func (m *MessageBuilder) SetSyncGroup(syncGroup int64) *MessageBuilder {
 	m.payload.SyncGroup = syncGroup
@@ -106,8 +104,47 @@ func (m *MessageBuilder) SetLastReadWatermarkTs(ts int64) *MessageBuilder {
 
 func (m *MessageBuilder) Execute() (error, error){
 	tskm := m.client.NewTaskManager()
-	m.payload.Otid = strconv.Itoa(int(methods.GenerateEpochId()))
-	tskm.AddNewTask(m.payload)
+
+	if m.payload.Source == 0 {
+		m.payload.Source = table.MESSENGER_INBOX_IN_THREAD
+	}
+
+	if m.payload.SyncGroup == 0 {
+		m.payload.SyncGroup = 1
+	}
+
+	if m.payload.InitiatingSource == 0 {
+		m.payload.InitiatingSource = table.FACEBOOK_INBOX
+	}
+
+	if m.payload.Text != "" {
+		tskm.AddNewTask(&socket.SendMessageTask{
+			ThreadId: m.payload.ThreadId,
+			Otid: strconv.Itoa(int(methods.GenerateEpochId())),
+			Source: m.payload.Source,
+			SyncGroup: m.payload.SyncGroup,
+			ReplyMetaData: m.payload.ReplyMetaData,
+			Text: m.payload.Text,
+			InitiatingSource: m.payload.InitiatingSource,
+			SkipUrlPreviewGen: m.payload.SkipUrlPreviewGen,
+			TextHasLinks: m.payload.TextHasLinks,
+			SendType: table.TEXT,
+			MultiTabEnv: 0,
+		})
+	}
+
+	if len(m.payload.AttachmentFBIds) > 0 {
+		tskm.AddNewTask(&socket.SendMessageTask{
+			ThreadId: m.payload.ThreadId,
+			Otid: strconv.Itoa(int(methods.GenerateEpochId())),
+			Source: m.payload.Source,
+			SyncGroup: m.payload.SyncGroup,
+			ReplyMetaData: m.payload.ReplyMetaData,
+			SendType: table.MEDIA,
+			AttachmentFBIds: m.payload.AttachmentFBIds,
+		})
+	}
+
 	tskm.AddNewTask(m.readPayload)
 	tskm.setTraceId(methods.GenerateTraceId())
 

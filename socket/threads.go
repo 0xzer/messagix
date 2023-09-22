@@ -10,12 +10,16 @@ type SendMessageTask struct {
 	Otid string `json:"otid"`
 	Source table.ThreadSourceType `json:"source"`
 	SendType table.SendType `json:"send_type"`
+	AttachmentFBIds []int64 `json:"attachment_fbids,omitempty"`
 	SyncGroup int64 `json:"sync_group"`
 	ReplyMetaData *ReplyMetaData `json:"reply_metadata,omitempty"`
 	Text string `json:"text,omitempty"`
-	InitiatingSource table.InitiatingSource `json:"initiating_source"`
+	HotEmojiSize int32 `json:"hot_emoji_size,omitempty"`
+	StickerId int64 `json:"sticker_id,omitempty"`
+	InitiatingSource table.InitiatingSource `json:"initiating_source"` // usually FACEBOOK_INBOX
 	SkipUrlPreviewGen int32 `json:"skip_url_preview_gen"` // 0 or 1
 	TextHasLinks int32 `json:"text_has_links"` // 0 or 1
+	MultiTabEnv int32 `json:"multitab_env,omitempty"` // 0 ?
 }
 
 type ReplyMetaData struct {

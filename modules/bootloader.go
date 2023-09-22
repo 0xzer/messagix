@@ -44,7 +44,7 @@ type RsrcDetails struct {
 
 func HandlePayload(payload interface{}, bootloaderConfig *BootLoaderConfig) error {
 	var data *Bootloader_HandlePayload
-	err := interfaceToStructJSON(&payload, &data)
+	err := InterfaceToStructJSON(&payload, &data)
 	if err != nil {
 		return err
 	}
