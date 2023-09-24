@@ -17,6 +17,7 @@ type Proxy func(*http.Request) (*url.URL, error)
 type Client struct {
 	Account *Account
 	Threads *Threads
+	Messages *Messages
 
 	Logger zerolog.Logger
 
@@ -72,7 +73,8 @@ func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Cli
 	
 	cli.Account = &Account{client: cli}
 	cli.Threads = &Threads{client: cli}
-
+	cli.Messages = &Messages{client: cli}
+	
 	return cli
 }
 

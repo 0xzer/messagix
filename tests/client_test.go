@@ -3,7 +3,6 @@ package client_test
 import (
 	"log"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/0xzer/messagix"
@@ -14,7 +13,6 @@ import (
 var cli *messagix.Client
 
 func TestClient(t *testing.T) {
-	
 	cookies := types.NewCookiesFromString("")
 
 	cli = messagix.NewClient(cookies, debug.NewLogger(), "")
@@ -45,24 +43,9 @@ func evHandler(evt interface{}) {
 			Any("total_threads", len(evtData.Threads)).
 			Any("total_contacts", len(evtData.Contacts)).
 			Msg("Client is ready!")
-
-			mediaData, _ := os.ReadFile("test.jpeg")
-			payload, header := cli.NewMercuryMediaPayload("test_image.jpg", messagix.IMAGE_JPEG, mediaData)
-		
-			resp, err := cli.SendMercuryUploadRequest(payload, header)
-			if err != nil {
-				log.Fatal(err)
-			}
 			
-			imageData, ok := resp.Payload.Metadata.(*types.ImageMetadata)
-			if !ok {
-				log.Fatalf("got invalid image metadata (actualType=%v)", reflect.TypeOf(resp.Payload.Metadata))
-			}
-
-			log.Println(imageData)
-			os.Exit(1)
 		case *messagix.Event_PublishResponse:
-			cli.Logger.Info().Any("evtData", evtData).Msg("Got new event!")
+			cli.Logger.Info().Any("tableData", evtData.Table).Msg("Received new event from socket")
 		case *messagix.Event_Error:
 			cli.Logger.Err(evtData.Err).Msg("The library encountered an error")
 			os.Exit(1)
@@ -72,4 +55,45 @@ func evHandler(evt interface{}) {
 		default:
 			cli.Logger.Info().Any("data", evtData).Interface("type", evt).Msg("Got unknown event!")
 	}
+}
+
+func sendReaction() {
+	resp, err := cli.Messages.SendReaction(123123123, "messageid", "")
+	if err != nil {
+		log.Fatalf("failed to send reaction: %e", err)
+	}
+	log.Println(resp.LSReplaceOptimisticReaction)
+}
+
+func sendMessageWithMedia() {
+	mediaData, _ := os.ReadFile("test.jpeg")
+	turtleData, _ := os.ReadFile("turtle.jpeg")
+
+	medias := []*messagix.MercuryUploadMedia{
+		{Filename: "test_image.jpg", MediaType: messagix.IMAGE_JPEG, MediaData: mediaData},
+		{Filename: "turtle.jpg", MediaType: messagix.IMAGE_JPEG, MediaData: turtleData},
+	}
+
+	mediaUploads, err := cli.SendMercuryUploadRequest(medias)
+	if err != nil {
+		log.Fatalf("failed: %e", err)
+	}
+
+	mediaIds := make([]int64, 0)
+	for _, m := range mediaUploads {
+		switch data := m.Payload.Metadata.(type) {
+		case *types.ImageMetadata:
+			mediaIds = append(mediaIds, data.Fbid)
+		case *types.VideoMetadata:
+			mediaIds = append(mediaIds, data.VideoID)
+		}
+	}
+
+	cli.Logger.Info().Any("mediaIds", mediaIds).Msg("Sending mediaIds")
+	sendMsgBuilder := cli.Threads.NewMessageBuilder(1231231323)
+	sendMsgBuilder.SetMediaIDs(mediaIds)
+	sendMsgBuilder.SetText("media test")
+	sendMsgBuilder.SetLastReadWatermarkTs(1695421957450)
+
+	sendMsgBuilder.Execute() // make sure to execute to send the task
 }

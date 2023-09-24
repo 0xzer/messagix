@@ -21,31 +21,48 @@ const (
 	VIDEO_MP4 MediaType = "video/mp4"
 )
 
+type MercuryUploadMedia struct {
+	Filename string
+	MediaType MediaType
+	MediaData []byte
+}
+
 var MERCURY_UPLOAD_URL = "https://www.facebook.com/ajax/mercury/upload.php?"
-func (c *Client) SendMercuryUploadRequest(payload []byte, contentType string) (*types.MercuryUploadResponse, error) {
-	urlQueries := c.NewHttpQuery()
-	queryValues, err := query.Values(urlQueries)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert HttpQuery into query.Values for mercury upload: %e", err)
+func (c *Client) SendMercuryUploadRequest(medias []*MercuryUploadMedia) ([]*types.MercuryUploadResponse, error) {
+	responses := make([]*types.MercuryUploadResponse, 0)
+	for _, media := range medias {
+		urlQueries := c.NewHttpQuery()
+		queryValues, err := query.Values(urlQueries)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert HttpQuery into query.Values for mercury upload: %e", err)
+		}
+
+		payloadBytes := queryValues.Encode()
+		url := MERCURY_UPLOAD_URL + payloadBytes
+		payload, contentType := c.NewMercuryMediaPayload(media)
+
+		h := c.buildHeaders()
+		h.Add("content-type", contentType)
+		h.Add("origin", "https://www.facebook.com")
+		h.Add("referer", "https://www.facebook.com/messages")
+		h.Add("sec-fetch-dest", "empty")
+		h.Add("sec-fetch-mode", "cors")
+		h.Add("sec-fetch-site", "same-origin") // header is required
+		
+		_, respBody, err := c.MakeRequest(url, "POST", h, payload, types.NONE)
+		if err != nil {
+			return nil, fmt.Errorf("failed to send MercuryUploadRequest: %e", err)
+		}
+
+		resp, err := c.parseMercuryResponse(respBody)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse mercury response: %e", err)
+		}
+
+		responses = append(responses, resp)
 	}
 
-	payloadBytes := queryValues.Encode()
-	url := MERCURY_UPLOAD_URL + payloadBytes
-
-	h := c.buildHeaders()
-	h.Add("content-type", contentType)
-	h.Add("origin", "https://www.facebook.com")
-	h.Add("referer", "https://www.facebook.com/messages")
-	h.Add("sec-fetch-dest", "empty")
-	h.Add("sec-fetch-mode", "cors")
-	h.Add("sec-fetch-site", "same-origin") // header is required
-	
-	_, respBody, err := c.MakeRequest(url, "POST", h, payload, types.NONE)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send MercuryUploadRequest: %e", err)
-	}
-
-	return c.parseMercuryResponse(respBody)
+	return responses, nil
 }
 
 func (c *Client) parseMercuryResponse(respBody []byte) (*types.MercuryUploadResponse, error) {
@@ -87,7 +104,7 @@ func (c *Client) parseMetadata(response *types.MercuryUploadResponse) error {
 }
 
 // returns payloadBytes, multipart content-type header
-func (c *Client) NewMercuryMediaPayload(fileName string, mediaType MediaType, mediaData []byte) ([]byte, string) {
+func (c *Client) NewMercuryMediaPayload(media *MercuryUploadMedia) ([]byte, string) {
 	var mercuryPayload bytes.Buffer
 	writer := multipart.NewWriter(&mercuryPayload)
 
@@ -97,8 +114,8 @@ func (c *Client) NewMercuryMediaPayload(fileName string, mediaType MediaType, me
 	}
 	
 	partHeader := textproto.MIMEHeader{
-		"Content-Disposition": []string{`form-data; name="farr"; filename="` + fileName + `"`},
-		"Content-Type": []string{string(mediaType)},
+		"Content-Disposition": []string{`form-data; name="farr"; filename="` + media.Filename + `"`},
+		"Content-Type": []string{string(media.MediaType)},
 	}
 
 	mediaPart, err := writer.CreatePart(partHeader)
@@ -106,7 +123,7 @@ func (c *Client) NewMercuryMediaPayload(fileName string, mediaType MediaType, me
 		log.Fatalf("Failed to create multipart writer: %v", err)
 	}
 
-	_, err = mediaPart.Write(mediaData)
+	_, err = mediaPart.Write(media.MediaData)
 	if err != nil {
 		log.Fatalf("Failed to write data to multipart section: %v", err)
 	}

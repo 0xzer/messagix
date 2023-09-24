@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/0xzer/messagix/methods"
-	"github.com/0xzer/messagix/table"
 	"github.com/0xzer/messagix/socket"
+	"github.com/0xzer/messagix/table"
 )
 
 type Threads struct {
@@ -53,6 +53,7 @@ func (t *Threads) NewMessageBuilder(threadId int64) *MessageBuilder {
 		},
 		readPayload: &socket.ThreadMarkReadTask{
 			ThreadId: threadId,
+			SyncGroup: 1,
 		},
 	}
 }
@@ -102,7 +103,7 @@ func (m *MessageBuilder) SetLastReadWatermarkTs(ts int64) *MessageBuilder {
 	return m
 }
 
-func (m *MessageBuilder) Execute() (error, error){
+func (m *MessageBuilder) Execute() (*table.LSTable, error){
 	tskm := m.client.NewTaskManager()
 
 	if m.payload.Source == 0 {
@@ -117,10 +118,11 @@ func (m *MessageBuilder) Execute() (error, error){
 		m.payload.InitiatingSource = table.FACEBOOK_INBOX
 	}
 
-	if m.payload.Text != "" {
+	otid := int(methods.GenerateEpochId())
+	if m.payload.Text != nil {
 		tskm.AddNewTask(&socket.SendMessageTask{
 			ThreadId: m.payload.ThreadId,
-			Otid: strconv.Itoa(int(methods.GenerateEpochId())),
+			Otid: strconv.Itoa(otid),
 			Source: m.payload.Source,
 			SyncGroup: m.payload.SyncGroup,
 			ReplyMetaData: m.payload.ReplyMetaData,
@@ -136,7 +138,7 @@ func (m *MessageBuilder) Execute() (error, error){
 	if len(m.payload.AttachmentFBIds) > 0 {
 		tskm.AddNewTask(&socket.SendMessageTask{
 			ThreadId: m.payload.ThreadId,
-			Otid: strconv.Itoa(int(methods.GenerateEpochId())),
+			Otid: strconv.Itoa(otid+100),
 			Source: m.payload.Source,
 			SyncGroup: m.payload.SyncGroup,
 			ReplyMetaData: m.payload.ReplyMetaData,
@@ -150,18 +152,19 @@ func (m *MessageBuilder) Execute() (error, error){
 
 	payload, err := tskm.FinalizePayload()
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to finalize payload for SendMessageTask: %e", err)
 	}
 
 	packetId, err := m.client.socket.makeLSRequest(payload, 3)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to make LS request for SendMessageTask: %e", err)
 	}
 
 	resp := m.client.socket.responseHandler.waitForPubResponseDetails(packetId)
 	if resp == nil {
-		return nil, fmt.Errorf("failed to receive response from socket while trying to send message. packetId: %d", packetId)
+		return nil, fmt.Errorf("failed to receive response from socket after sending SendMessageTask. packetId: %d", packetId)
 	}
+	resp.Finish()
 
-	return nil, nil
+	return &resp.Table, nil
 }

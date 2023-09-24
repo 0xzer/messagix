@@ -121,6 +121,8 @@ const (
    TEXT SendType = 1
    STICKER SendType = 2
    MEDIA SendType = 3
+   FORWARD SendType = 5
+   EXTERNAL_MEDIA SendType = 7
 )
 
 type InitiatingSource int64
@@ -148,4 +150,10 @@ type AppState int64
 const (
    BACKGROUND AppState = 0
    FOREGROUND AppState = 1
+)
+
+type ReactionStyle int64
+const (
+   UNKNOWN_REACTION_STYLE ReactionStyle = 0
+   BASIC_SUPER_REACT_ANIMATION ReactionStyle = 1
 )

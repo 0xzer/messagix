@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"sync"
 	"time"
+
 	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/packets"
 	"github.com/gorilla/websocket"
@@ -17,12 +19,15 @@ var (
 	ErrSocketAlreadyOpen = errors.New("socket is already open")
 )
 
+var handshakeBytes = []byte{192, 0} // pingreq packet
+
 type Socket struct {
 	client *Client
 	conn *websocket.Conn
 	responseHandler *ResponseHandler
 	mu *sync.Mutex
     packetsSent uint16
+	handshakeInterval *time.Ticker
 }
 
 func (c *Client) NewSocketClient() *Socket {
@@ -87,6 +92,30 @@ func (s *Socket) beginReadStream() {
 				go s.handleBinaryMessage(p)
 		}
 	}
+}
+
+func (s *Socket) startHandshakeInterval() {
+    if s.handshakeInterval != nil {
+        s.handshakeInterval.Stop()
+    }
+
+    s.handshakeInterval = time.NewTicker(15 * time.Second)
+	s.client.Logger.Info().Msg("Starting handshakeInterval...")
+    go func() {
+        for range s.handshakeInterval.C {
+            s.sendHandshake()
+			s.client.Logger.Info().Msg("Sent handshake to socket")
+        }
+    }()
+}
+
+func (s *Socket) sendHandshake() {
+	err := s.sendData(handshakeBytes)
+	if err != nil {
+		log.Fatalf("failed to send handshake data: %e", err)
+	}
+
+	// TO-DO implement channels to handle the server not responding with a PINGRESP packet
 }
 
 func (s *Socket) sendData(data []byte) error {

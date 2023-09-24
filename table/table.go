@@ -80,9 +80,19 @@ type LSTable struct {
 	LSInsertSearchSection []LSInsertSearchSection
 	LSSyncUpdateThreadName []LSSyncUpdateThreadName
 	LSSetMessageTextHasLinks []LSSetMessageTextHasLinks
+	LSUpdateMessagesOptimisticContext []LSUpdateMessagesOptimisticContext
+	LSMailboxTaskCompletionApiOnTaskCompletion []LSMailboxTaskCompletionApiOnTaskCompletion
+	LSWriteCTAIdToThreadsTable []LSWriteCTAIdToThreadsTable
+	LSQueryAdditionalGroupThreads []LSQueryAdditionalGroupThreads
+	LSReplaceOptimisticReaction []LSReplaceOptimisticReaction
 }
 
 var SPTable = map[string]string{
+	"replaceOptimisticReaction": "LSReplaceOptimisticReaction",
+	"queryAdditionalGroupThreads": "LSQueryAdditionalGroupThreads",
+	"writeCTAIdToThreadsTable": "LSWriteCTAIdToThreadsTable",
+	"mailboxTaskCompletionApiOnTaskCompletion": "LSMailboxTaskCompletionApiOnTaskCompletion",
+	"updateMessagesOptimisticContext": "LSUpdateMessagesOptimisticContext",
 	"setMessageTextHasLinks": "LSSetMessageTextHasLinks",
 	"syncUpdateThreadName": "LSSyncUpdateThreadName",
 	"insertSearchSection": "LSInsertSearchSection",

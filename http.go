@@ -37,6 +37,7 @@ type HttpQuery struct {
 }
 
 func (c *Client) NewHttpQuery() *HttpQuery {
+	c.graphQLRequests++
 	siteConfig := c.configs.siteConfig
 	return &HttpQuery{
 		Av: siteConfig.AccountId,

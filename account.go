@@ -3,9 +3,8 @@ package messagix
 import (
 	"fmt"
 	"log"
-
-	"github.com/0xzer/messagix/table"
 	"github.com/0xzer/messagix/socket"
+	"github.com/0xzer/messagix/table"
 	"github.com/google/uuid"
 )
 

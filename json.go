@@ -2,6 +2,7 @@ package messagix
 
 import (
 	"encoding/json"
+	"strconv"
 )
 
 type Connect struct {
@@ -51,6 +52,22 @@ func (s *Socket) newConnectJSON() (string, error) {
 		Cid: s.client.configs.mqttConfig.ClientId,
 	}
 	
+	jsonData, err := json.Marshal(payload)
+	return string(jsonData), err
+}
+
+
+type AppSettingsPublish struct {
+	LsFdid string `json:"ls_fdid"`
+	SchemaVersion   string `json:"ls_sv"`
+}
+
+func (s *Socket) newAppSettingsPublishJSON(versionId int64) (string, error) {
+	payload := &AppSettingsPublish{
+		LsFdid: "",
+		SchemaVersion: strconv.Itoa(int(versionId)),
+	}
+
 	jsonData, err := json.Marshal(payload)
 	return string(jsonData), err
 }

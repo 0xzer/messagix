@@ -12,11 +12,12 @@ var TaskLabels = map[string]string{
 	"ReportAppStateTask": "123",
 	"SyncGroupsTask": "145",
 	"FetchMessagesTask": "228",
+	"SendReactionTask": "29",
 }
 
 type Task interface {
 	GetLabel() string
-	Create() (interface{}, interface{}) // payload, queue_name
+	Create() (interface{}, interface{}, bool) // payload, queue_name, marshal_queuename
 }
 
 type TaskData struct {

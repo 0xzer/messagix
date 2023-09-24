@@ -97,8 +97,16 @@ func (ls *LightSpeedDecoder) Decode(data interface{}) interface{} {
 		return ls.Decode(stepData[0]).(int64)
 	case NATIVE_OP_CURRENT_TIME:
 		return time.Now().UnixMilli()
+	case CALL_NATIVE_OPERATION:
+		log.Println("call native operation...")
+		return nil
+	case LOGGER_LOG:
+		log.Println("[FB-LOGGER] Server log:", stepData[0])
+		return nil
 	default:
 		log.Println("got unknown step type:", stepType)
+		log.Println(stepData...)
+		log.Println(s...)
 		os.Exit(1)
 	}
 

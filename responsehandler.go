@@ -81,7 +81,7 @@ func (p *ResponseHandler) waitForDetails(packetId uint16, channelType ChannelTyp
 			return response
 		case <-time.After(p.packetTimeout):
 			p.deleteDetails(packetId, channelType)
-			return nil
+			return &Event_PublishResponse{}
     }
 }
 

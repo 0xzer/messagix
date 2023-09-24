@@ -10,9 +10,9 @@ func (t *GetContactsTask) GetLabel() string {
 	return TaskLabels["GetContactsTask"]
 }
 
-func (t *GetContactsTask) Create() (interface{}, interface{}) {
+func (t *GetContactsTask) Create() (interface{}, interface{}, bool) {
 	queueName := []string{"search_contacts", methods.GenerateTimestampString()}
-	return t, queueName
+	return t, queueName, false
 }
 
 type GetContactsFullTask struct {
@@ -23,7 +23,7 @@ func (t *GetContactsFullTask) GetLabel() string {
 	return TaskLabels["GetContactsFullTask"]
 }
 
-func (t *GetContactsFullTask) Create() (interface{}, interface{}) {
+func (t *GetContactsFullTask) Create() (interface{}, interface{}, bool) {
 	queueName := "cpq_v2"
-	return t, queueName
+	return t, queueName, false
 }

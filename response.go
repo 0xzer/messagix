@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+
 	"github.com/0xzer/messagix/byter"
 	"github.com/0xzer/messagix/packets"
 )
@@ -18,6 +19,7 @@ var responseMap = map[uint8]responseHandler{
 	packets.PUBACK: func() ResponseData {return &Event_PublishACK{}},
 	packets.SUBACK: func() ResponseData {return &Event_SubscribeACK{}},
 	packets.PUBLISH: func() ResponseData {return &Event_PublishResponse{}},
+	packets.PINGRESP: func () ResponseData {return &Event_PingResp{}},
 }
 
 type Response struct {

@@ -2,6 +2,7 @@ package messagix
 
 import (
 	"encoding/json"
+	"log"
 	"strconv"
 
 	"github.com/0xzer/messagix/methods"
@@ -38,9 +39,8 @@ func (tm *TaskManager) setTraceId(traceId string) {
 }
 
 func (tm *TaskManager) AddNewTask(task socket.Task) {
-	payload, queueName := task.Create()
+	payload, queueName, marshalQueueName := task.Create()
 	label := task.GetLabel()
-	tm.client.Logger.Debug().Any("label", label).Any("payload", payload).Any("queueName", queueName).Msg("Creating task")
 
 	payloadMarshalled, err := json.Marshal(payload)
 	if err != nil {
@@ -48,21 +48,26 @@ func (tm *TaskManager) AddNewTask(task socket.Task) {
 		return
 	}
 
-	/*
-	queueNameMarshalled, err := json.Marshal(queueName)
-	if err != nil {
-		tm.client.Logger.Err(err).Any("label", label).Msg("failed to marshal queueName information for task")
-		return
+	
+	if marshalQueueName {
+		queueName, err = json.Marshal(queueName)
+		if err != nil {
+			tm.client.Logger.Err(err).Any("label", label).Msg("failed to marshal queueName information for task")
+			return
+		}
+		queueName = string(queueName.([]byte))
+		log.Println(queueName)
 	}
-	*/
+	
 	taskData := socket.TaskData{
 		FailureCount: nil,
 		Label: label,
 		Payload: string(payloadMarshalled),
-		QueueName: queueName,//string(queueNameMarshalled),
+		QueueName: queueName,
 		TaskId: tm.GetTaskId(),
 	}
-	
+	tm.client.Logger.Debug().Any("label", label).Any("payload", payload).Any("queueName", queueName).Any("taskId", taskData.TaskId).Msg("Creating task")
+
 	tm.currTasks = append(tm.currTasks, taskData)
 }
 

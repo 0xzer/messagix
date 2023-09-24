@@ -22,6 +22,8 @@ func (s *Socket) handleBinaryMessage(data []byte) {
 		s.handleErrorEvent(err)
 	} else {
 		switch evt := resp.ResponseData.(type) {
+		case *Event_PingResp:
+			s.client.Logger.Info().Msg("Got PingResp packet")
 		case *Event_PublishResponse:
 			s.handlePublishResponseEvent(evt)
 		case *Event_PublishACK, *Event_SubscribeACK:
@@ -110,6 +112,7 @@ func (s *Socket) handleReadyEvent(data *Event_Ready) {
 	}
 
 	s.client.eventHandler(data.Finish())
+	go s.startHandshakeInterval()
 }
 
 func (s *Socket) handleACKEvent(ackData AckEvent) {
@@ -127,7 +130,6 @@ func (s *Socket) handleErrorEvent(err error) {
 }
 
 func (s *Socket) handlePublishResponseEvent(resp *Event_PublishResponse) {
-	//s.client.Logger.Info().Any("requestId", resp.Data.RequestID).Msg("Got publish response event...")
 	packetId := resp.Data.RequestID
 	hasPacket := s.responseHandler.hasPacket(uint16(packetId))
 	switch resp.Topic {
@@ -150,6 +152,9 @@ func (s *Socket) handlePublishResponseEvent(resp *Event_PublishResponse) {
 	}
 }
 
+type Event_PingResp struct {}
+func (pr *Event_PingResp) SetIdentifier(identifier int16) {}
+func (e *Event_PingResp) Finish() ResponseData {return e}
 // Event_Ready represents the CONNACK packet's response.
 //
 // The library provides the raw parsed data, so handle connection codes as needed for your application.

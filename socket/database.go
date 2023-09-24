@@ -29,7 +29,7 @@ func (t *SyncGroupsTask) GetLabel() string {
 	return TaskLabels["SyncGroupsTask"]
 }
 
-func (t *SyncGroupsTask) Create() (interface{}, interface{}) {
+func (t *SyncGroupsTask) Create() (interface{}, interface{}, bool) {
 	queueName := "trq"
-	return t, queueName
+	return t, queueName, false
 }

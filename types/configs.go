@@ -50,6 +50,7 @@ func (m *MQTTConfig) BuildBrokerUrl() string {
 
 type SiteConfig struct {
 	AccountId string
+	AccountIdInt int64
 	Bitmap *crypto.Bitmap
 	CSRBitmap *crypto.Bitmap
 	HasteSessionId string

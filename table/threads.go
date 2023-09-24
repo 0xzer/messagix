@@ -272,3 +272,15 @@ type LSSyncUpdateThreadName struct {
     ThreadKey int64 `index:"1"`
     ThreadName1 string `index:"2"`
 }
+
+type LSWriteCTAIdToThreadsTable struct {
+    ThreadKey int64 `index:"0"`
+    LastMessageCtaType int64 `index:"1"`
+    LastMessageCtaTimestampMs int64 `index:"2"`
+}
+
+type LSQueryAdditionalGroupThreads struct {
+    NumThreads int64 `index:"0"`
+    NumMessages int64 `index:"1"`
+    AdditionalPagesToFetch int64 `index:"2"`
+}

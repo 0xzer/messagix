@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"github.com/0xzer/messagix/graphql"
 	"github.com/0xzer/messagix/lightspeed"
 	"github.com/0xzer/messagix/table"
@@ -72,7 +71,6 @@ func (c *Client) makeLSRequest(variables *graphql.LSPlatformGraphQLLightspeedVar
 		return nil, err
 	}
 
-	os.WriteFile("lsGraphQLResponse.json", respBody, os.ModePerm)
 	var graphQLData *graphql.LSPlatformGraphQLLightspeedRequestQuery
 	err = json.Unmarshal(respBody, &graphQLData)
 	if err != nil {

@@ -286,3 +286,11 @@ type LSSetMessageTextHasLinks struct {
     MessageId string `index:"1"`
     TimestampMs int64 `index:"2"`
 }
+
+type LSUpdateMessagesOptimisticContext struct {}
+
+type LSReplaceOptimisticReaction struct {
+    ThreadKey int64 `index:"0"`
+    ActorId int64 `index:"1"`
+    MessageId string `index:"2"`
+}

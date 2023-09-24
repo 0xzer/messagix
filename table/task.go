@@ -21,3 +21,8 @@ type LSUpdateTaskValue struct {
 	TaskValue1 string `index:"1"`
 	TaskValue2 string `index:"2"`
 }
+
+type LSMailboxTaskCompletionApiOnTaskCompletion struct {
+	TaskId int64 `index:"0"`
+	Success bool `index:"1"`
+}

@@ -49,8 +49,10 @@ func (c *Configs) SetupConfigs() error {
 		log.Fatalf("failed to parse AjaxURLData from eqmc json struct: %e", err)
 	}
 
+	accountIdInt, _ := strconv.Atoi(schedulerJS.CurrentUserInitialData.AccountID)
 	c.siteConfig = &types.SiteConfig{
 		AccountId: schedulerJS.CurrentUserInitialData.AccountID,
+		AccountIdInt: int64(accountIdInt),
 		Bitmap: bitmap,
 		CSRBitmap: csrBitmap,
 		HasteSessionId: schedulerJS.SiteData.Hsi,

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -54,7 +53,6 @@ func (m *ModuleParser) fetchMainSite() []byte { // just log.fatal if theres an e
 
 func (m *ModuleParser) load() {
 	htmlData := m.fetchMainSite()
-	os.WriteFile("res.html", htmlData, os.ModePerm)
 	doc, err := html.Parse(bytes.NewReader(htmlData))
 	if err != nil {
 		log.Fatalf("failed to parse doc string: %e", err)
@@ -76,7 +74,6 @@ func (m *ModuleParser) load() {
 			var data *ModuleData
 			err := json.Unmarshal([]byte(tag.Content), &data)
 			if err != nil {
-				os.WriteFile("test.json", []byte(tag.Content), os.ModePerm)
 				log.Fatalf("failed to unmarshal content to moduleData: %e", err)
 			}
 

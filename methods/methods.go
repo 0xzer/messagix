@@ -7,11 +7,37 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
 	"github.com/google/uuid"
 )
 
+
+var (
+	epochMutex    sync.Mutex
+	lastTimestamp int64
+	counter       int64
+)
 var Charset = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890")
+
+/*
+	Counter + Mutex logic to ensure unique epoch id for all calls
+*/
+func GenerateEpochId() int64 {
+	epochMutex.Lock()
+	defer epochMutex.Unlock()
+
+	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
+	if timestamp == lastTimestamp {
+		counter++
+	} else {
+		lastTimestamp = timestamp
+		counter = 0
+	}
+	id := (timestamp << 22) | (counter << 12) | 42
+	return id
+}
 
 func GenerateTimestampString() string {
 	return strconv.Itoa(int(time.Now().UnixMilli()))
@@ -34,12 +60,6 @@ func RandStr(length int) string {
 func GenerateWebsessionID() string {
 	str := RandStr(6) + ":" + RandStr(6) + ":" + RandStr(6)
 	return strings.ToLower(str)
-}
-
-func GenerateEpochId() int64 {
-	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
-	id := (timestamp << 22) | (42 << 12)
-	return id
 }
 
 func GenerateTraceId() string {
