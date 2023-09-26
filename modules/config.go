@@ -32,3 +32,10 @@ type LSPlatformMessengerSyncParams struct {
 	Contact string `json:"contact,omitempty"`
 	E2Ee    string `json:"e2ee,omitempty"`
 }
+
+type InitialCookieConsent struct {
+	DeferCookies           bool  `json:"deferCookies,omitempty"`
+	InitialConsent         []int `json:"initialConsent,omitempty"`
+	NoCookies              bool  `json:"noCookies,omitempty"`
+	ShouldShowCookieBanner bool  `json:"shouldShowCookieBanner,omitempty"`
+}

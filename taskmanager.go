@@ -2,7 +2,6 @@ package messagix
 
 import (
 	"encoding/json"
-	"log"
 	"strconv"
 
 	"github.com/0xzer/messagix/methods"
@@ -56,7 +55,6 @@ func (tm *TaskManager) AddNewTask(task socket.Task) {
 			return
 		}
 		queueName = string(queueName.([]byte))
-		log.Println(queueName)
 	}
 	
 	taskData := socket.TaskData{

@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"reflect"
 	"strings"
@@ -44,6 +45,24 @@ func (c *Cookies) ToString() string {
 	}
 	
 	return s
+}
+
+func NewCookiesFromResponse(cookies []*http.Cookie) *Cookies {
+	session := &Cookies{}
+	for _, c := range cookies {
+		val := c.Value
+		switch c.Name {
+		case "c_user":
+			session.AccountId = val
+		case "sb":
+			session.Sb = val
+		case "xs":
+			session.Xs = val
+		case "fr":
+			session.Fr = val
+		}
+	}
+	return session
 }
 
 // FROM JSON FILE.

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+
 	"github.com/0xzer/messagix/graphql"
 	"github.com/0xzer/messagix/lightspeed"
 )
@@ -95,37 +96,55 @@ func InterfaceToStructJSON(data interface{}, i interface{}) error {
 }
 
 func handleDefine(modName string, data []interface{}) error {
+	reflectedMs := reflect.ValueOf(&SchedulerJSDefined).Elem()
 	switch modName {
 		case "ssjs":
-			reflectedMs := reflect.ValueOf(&SchedulerJSDefined).Elem()
 			for _, child := range data {
 				configData := child.([]interface{})
-				config := configData[2]
-				configName := configData[0].(string)
-				configId := int(configData[3].(float64))
-		
-				if configId <= 0 {
-					continue
-				}
-
-				Bitmap = append(Bitmap, configId)
-				field := reflectedMs.FieldByName(configName)
-				if !field.IsValid() {
-					//fmt.Printf("Invalid field name: %s\n", configName)
-					continue
-				}
-				if !field.CanSet() {
-					//fmt.Printf("Unsettable field: %s\n", configName)
-					continue
-				}
-		
-				err := InterfaceToStructJSON(config, field.Addr().Interface())
+				err := handleConfigData(configData, reflectedMs)
 				if err != nil {
 					return err
 				}
 			}
+		case "default_define":
+			err := handleConfigData(data, reflectedMs)
+			if err != nil {
+				return err
+			}
 		}
 		return nil
+}
+
+func handleConfigData(configData []interface{}, reflectedMs reflect.Value) error {
+	if len(configData) < 4 {
+		return nil
+	}
+	
+	configName := configData[0].(string)
+	config := configData[2]
+	configId := int(configData[3].(float64))
+
+	if configId <= 0 {
+		return nil
+	}
+
+	Bitmap = append(Bitmap, configId)
+	field := reflectedMs.FieldByName(configName)
+	if !field.IsValid() {
+		//fmt.Printf("Invalid field name: %s\n", configName)
+		return nil
+	}
+	if !field.CanSet() {
+		//fmt.Printf("Unsettable field: %s\n", configName)
+		return nil
+	}
+
+	err := InterfaceToStructJSON(config, field.Addr().Interface())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func handleRequire(modName string, data []interface{}) error {

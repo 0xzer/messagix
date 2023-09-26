@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"log"
 	"math/rand"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,6 +21,7 @@ var (
 	counter       int64
 )
 var Charset = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890")
+var jsObjectRe = regexp.MustCompile(`(?m)(\s*{|\s*,\s*)\s*([a-zA-Z0-9_]+)\s*:`)
 
 /*
 	Counter + Mutex logic to ensure unique epoch id for all calls
@@ -37,6 +39,10 @@ func GenerateEpochId() int64 {
 	}
 	id := (timestamp << 22) | (counter << 12) | 42
 	return id
+}
+
+func RandomInt(min, max int) int64 {
+	return int64(min + rand.Intn(max-min+1))
 }
 
 func GenerateTimestampString() string {
@@ -57,8 +63,13 @@ func RandStr(length int) string {
     return string(b)
 }
 
-func GenerateWebsessionID() string {
-	str := RandStr(6) + ":" + RandStr(6) + ":" + RandStr(6)
+func GenerateWebsessionID(loggedIn bool) string {
+	str := ""
+	if loggedIn {
+		str = RandStr(6) + ":" + RandStr(6) + ":" + RandStr(6)
+	} else {
+		str = ":" + RandStr(6) + ":" + RandStr(6)
+	}
 	return strings.ToLower(str)
 }
 
@@ -69,4 +80,8 @@ func GenerateTraceId() string {
 		log.Fatalf("failed to decode traceId string: %s", err)
 	}
 	return "#" + base64.RawURLEncoding.EncodeToString(decodedHex)
+}
+
+func PreprocessJSObject(s string) string {
+	return jsObjectRe.ReplaceAllString(s, "$1 \"$2\":")
 }

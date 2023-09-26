@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"testing"
-
 	"github.com/0xzer/messagix"
 	"github.com/0xzer/messagix/debug"
 	"github.com/0xzer/messagix/types"
@@ -13,21 +12,19 @@ import (
 var cli *messagix.Client
 
 func TestClient(t *testing.T) {
-	cookies := types.NewCookiesFromString("")
-
-	cli = messagix.NewClient(cookies, debug.NewLogger(), "")
+	session, err := types.NewCookiesFromFile("session.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	cli = messagix.NewClient(session, debug.NewLogger(), "")
 	cli.SetEventHandler(evHandler)
 
-	err := cli.Connect()
+	err = cli.Connect()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = cli.SaveSession("session.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	cli.SaveSession("session.json")
 	// making sure the main program does not exit so that the socket can continue reading
 	wait := make(chan struct{})
     <-wait
@@ -55,6 +52,16 @@ func evHandler(evt interface{}) {
 		default:
 			cli.Logger.Info().Any("data", evtData).Interface("type", evt).Msg("Got unknown event!")
 	}
+}
+
+func sendLogin() {
+	session, err := cli.Account.Login("someemail@gmail.com", "mypassword123")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println(session)
+	cli.SaveSession("session.json")
 }
 
 func sendReaction() {

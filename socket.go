@@ -174,7 +174,6 @@ func (s *Socket) sendSubscribePacket(topic Topic, qos packets.QoS, wait bool) (*
 		}
 	}
 
-	//s.client.Logger.Debug().Any("resp", resp).Any("topic", topic).Msg("Successfully subscribed to topic!")
 	return resp, nil
 }
 
@@ -184,9 +183,7 @@ func (s *Socket) sendPublishPacket(topic Topic, jsonData string, packet *packets
 		return packetId, err
 	}
 
-	//log.Println(string(publishRequestPayload))
 	s.responseHandler.addPacketChannel(packetId)
-	//s.client.Logger.Debug().Any("packetId", packetId).Msg("sending publish request!")
 	return packetId, s.sendData(publishRequestPayload)
 }
 

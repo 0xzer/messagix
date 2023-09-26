@@ -110,7 +110,7 @@ type LSAddParticipantIdToGroupThread struct {
     IsAdmin bool `index:"6"`
     SubscribeSource string `index:"7"`
     AuthorityLevel int64 `index:"9"`
-    NormalizedSearchTerms int64 `index:"10"`
+    NormalizedSearchTerms string `index:"10"`
     IsSuperAdmin bool `index:"11"`
     ThreadRoles int64 `index:"12"`
 }

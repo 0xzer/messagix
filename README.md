@@ -1,6 +1,9 @@
 # Messagix
 Messagix is a easy-to-use Go library for interacting with facebooks/metas lightspeed API.
 
+- [x] Login
+	- [x] Email
+	- [ ] Phone
 - [x] Fetch contact information
 - [x] Typing Notifications
 - [x] Fetch Messages (with message history support!)
@@ -90,5 +93,27 @@ func evHandler(evt interface{}) {
 		default:
 			cli.Logger.Info().Any("data", evtData).Interface("type", evt).Msg("Got unknown event!")
 	}
+}
+```
+
+# Login
+```go
+package main
+
+import (
+	"log"
+	"github.com/0xzer/messagix"
+	"github.com/0xzer/messagix/debug"
+)
+
+func main() {
+	cli := messagix.NewClient(nil, debug.NewLogger(), "")
+
+	session, err := cli.Account.Login("someEmail@gmail.com", "mypassword123")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cli.SaveSession("session.json")
 }
 ```

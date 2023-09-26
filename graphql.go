@@ -30,8 +30,6 @@ func (c *Client) makeGraphQLRequest(name string, variables interface{}) (*http.R
 	payload.ServerTimestamps = "true"
 	payload.DocID = graphQLDoc.DocId
 
-	c.graphQLRequests++
-
 	form, err := query.Values(payload)
 	if err != nil {
 		return nil, nil, err
@@ -47,7 +45,6 @@ func (c *Client) makeGraphQLRequest(name string, variables interface{}) (*http.R
 	headers.Add("origin", "https://www.facebook.com")
 	headers.Add("referer", "https://www.facebook.com/messages/")
 
-	//g.client.Logger.Debug().Any("headers", headers).Any("payload", string(payloadBytes)).Msg("Sending graphQL request")
 	return c.MakeRequest("https://www.facebook.com/api/graphql/", "POST", headers, payloadBytes, types.FORM)
 }
 

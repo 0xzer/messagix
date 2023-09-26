@@ -25,6 +25,8 @@ type SchedulerJSDefine struct {
 	DTSGInitialData          DTSGInitialData
 	CurrentUserInitialData   CurrentUserInitialData
 	LSPlatformMessengerSyncParams LSPlatformMessengerSyncParams
+	ServerNonce ServerNonce
+	InitialCookieConsent InitialCookieConsent
 }
 
 type SchedulerJSRequire struct {
@@ -37,16 +39,17 @@ var SchedulerJSRequired = SchedulerJSRequire{
 }
 
 func SSJSHandle(data interface{}) error {
+	var err error
 	box, ok := data.(map[string]interface{})
 	if !ok {
-		_, ok := data.([]interface{})
+		interfaceData, ok := data.([]interface{})
 		if ok {
-			return nil
+			err = handleDefine("default_define", interfaceData)
+			return err
 		}
 		log.Fatalf("failed to convert ssjs data to map[string]interface{}")
 	}
 
-	var err error
 	for k, v := range box {
 		if v == nil {
 			continue

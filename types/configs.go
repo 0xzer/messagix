@@ -68,4 +68,6 @@ type SiteConfig struct {
 	VersionId int64
 	X_ASDB_ID string
 	Locale string
+	LgnRnd string
+	Trynum string
 }

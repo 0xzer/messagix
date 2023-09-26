@@ -2,15 +2,20 @@ package messagix
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+
 	"github.com/0xzer/messagix/types"
+	"github.com/google/go-querystring/query"
 	"github.com/rs/zerolog"
 )
 
 var USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36"
+var ErrRedirectAttempted = errors.New("redirect attempted")
 
 type EventHandler func(evt interface{})
 type Proxy func(*http.Request) (*url.URL, error)
@@ -36,9 +41,6 @@ type Client struct {
 
 // pass an empty zerolog.Logger{} for no logging
 func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Client {
-	if cookies == nil {
-		log.Fatal("cookie struct can not be nil")
-	}
 
 	cli := &Client{
 		http: &http.Client{
@@ -50,6 +52,10 @@ func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Cli
 		graphQLRequests: 1,
 	}
 
+	cli.Account = &Account{client: cli}
+	cli.Threads = &Threads{client: cli}
+	cli.Messages = &Messages{client: cli}
+	cli.configs = &Configs{client: cli, needSync: false}
 	if proxy != "" {
 		err := cli.SetProxy(proxy)
 		if err != nil {
@@ -57,23 +63,21 @@ func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Cli
 		}
 	}
 
+	if cookies == nil || cookies.Xs == "" {
+		return cli
+	}
+
 	socket := cli.NewSocketClient()
 	cli.socket = socket
 
-	cli.configs = &Configs{client: cli, needSync: false}
-
 	moduleLoader := &ModuleParser{client: cli}
-	moduleLoader.load()
+	moduleLoader.load("https://www.facebook.com/messages")
 
 	cli.syncManager = cli.NewSyncManager()
 	configSetupErr := cli.configs.SetupConfigs()
 	if configSetupErr != nil {
 		log.Fatal(configSetupErr)
 	}
-	
-	cli.Account = &Account{client: cli}
-	cli.Threads = &Threads{client: cli}
-	cli.Messages = &Messages{client: cli}
 	
 	return cli
 }
@@ -107,4 +111,53 @@ func (c *Client) SaveSession(path string) error {
 	}
 
 	return os.WriteFile(path, jsonBytes, os.ModePerm)
+}
+
+var cookieConsentUrl = "https://www.facebook.com/cookie/consent/"
+func (c *Client) sendCookieConsent(jsDatr string) error {
+	h := c.buildHeaders()
+	h.Add("sec-fetch-dest", "empty")
+	h.Add("sec-fetch-mode", "cors")
+	h.Add("sec-fetch-site", "same-origin") // header is required, otherwise they dont send the csr bitmap data in the response. lets also include the other headers to be sure
+	h.Add("sec-fetch-user", "?1")
+	h.Add("host", "www.facebook.com")
+	h.Add("upgrade-insecure-requests", "1")
+	h.Add("origin", "https://www.facebook.com")
+	h.Add("cookie", "_js_datr="+jsDatr)
+	h.Add("referer", "https://www.facebook.com/login")
+
+	payload := c.NewHttpQuery()
+	payload.AcceptOnlyEssential = "false"
+	form, err := query.Values(payload)
+	if err != nil {
+		return err
+	}
+
+	payloadBytes := []byte(form.Encode())
+	req, _, err := c.MakeRequest(cookieConsentUrl, "POST", h, payloadBytes, types.FORM)
+	if err != nil {
+		return err
+	}
+
+	datr := c.findCookie(req.Cookies(), "datr")
+	if datr == nil {
+		return fmt.Errorf("consenting to cookies failed, could not find datr cookie in set-cookie header")
+	}
+
+	c.cookies = &types.Cookies{
+		Datr: datr.Value,
+		Wd: "901x1156",
+	}
+
+	return nil
+}
+
+func (c *Client) enableRedirects() {
+	c.http.CheckRedirect = nil
+}
+
+func (c *Client) disableRedirects() {
+	c.http.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return ErrRedirectAttempted
+	}
 }
