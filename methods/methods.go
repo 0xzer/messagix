@@ -82,6 +82,10 @@ func GenerateTraceId() string {
 	return "#" + base64.RawURLEncoding.EncodeToString(decodedHex)
 }
 
+func GenerateMachineId() string {
+	return strings.ToLower(RandStr(51))
+}
+
 func PreprocessJSObject(s string) string {
 	return jsObjectRe.ReplaceAllString(s, "$1 \"$2\":")
 }

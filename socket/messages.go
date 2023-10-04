@@ -27,3 +27,30 @@ func (t *SendReactionTask) Create() (interface{}, interface{}, bool) {
 	queueName := []string{"reaction", t.MessageID}
 	return t, queueName, true
 }
+
+type DeleteMessageTask struct {
+	MessageId string `json:"message_id"`
+}
+
+func (t *DeleteMessageTask) GetLabel() string {
+	return TaskLabels["DeleteMessageTask"]
+}
+
+func (t *DeleteMessageTask) Create() (interface{}, interface{}, bool) {
+	queueName := "unsend_message"
+	return t, queueName, false
+}
+
+type DeleteMessageMeOnlyTask struct {
+	ThreadKey int64 `json:"thread_key,omitempty"`
+	MessageId string `json:"message_id"`
+}
+
+func (t *DeleteMessageMeOnlyTask) GetLabel() string {
+	return TaskLabels["DeleteMessageMeOnlyTask"]
+}
+
+func (t *DeleteMessageMeOnlyTask) Create() (interface{}, interface{}, bool) {
+	queueName := "155"
+	return t, queueName, false
+}

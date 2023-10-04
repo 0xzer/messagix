@@ -1,30 +1,28 @@
-package client_test
+package messagix_test
 
 import (
 	"log"
 	"os"
 	"testing"
 	"github.com/0xzer/messagix"
+	"github.com/0xzer/messagix/cookies"
 	"github.com/0xzer/messagix/debug"
+	"github.com/0xzer/messagix/table"
 	"github.com/0xzer/messagix/types"
 )
 
 var cli *messagix.Client
-
 func TestClient(t *testing.T) {
-	session, err := types.NewCookiesFromFile("session.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	cli = messagix.NewClient(session, debug.NewLogger(), "")
+	session, _ := cookies.NewCookiesFromFile("session.json", types.Instagram)
+	cli = messagix.NewClient(types.Instagram, session, debug.NewLogger(), "")
 	cli.SetEventHandler(evHandler)
 
-	err = cli.Connect()
+	err := cli.Connect()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to connect to socket: %e", err)
 	}
 
-	cli.SaveSession("session.json")
+	cli.SaveSession("test_files/session.json")
 	// making sure the main program does not exit so that the socket can continue reading
 	wait := make(chan struct{})
     <-wait
@@ -39,8 +37,10 @@ func evHandler(evt interface{}) {
 			Any("total_messages", len(evtData.Messages)).
 			Any("total_threads", len(evtData.Threads)).
 			Any("total_contacts", len(evtData.Contacts)).
+			Any("platform", cli.CurrentPlatform()).
 			Msg("Client is ready!")
-			
+
+			sendReaction()
 		case *messagix.Event_PublishResponse:
 			cli.Logger.Info().Any("tableData", evtData.Table).Msg("Received new event from socket")
 		case *messagix.Event_Error:
@@ -54,18 +54,8 @@ func evHandler(evt interface{}) {
 	}
 }
 
-func sendLogin() {
-	session, err := cli.Account.Login("someemail@gmail.com", "mypassword123")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Println(session)
-	cli.SaveSession("session.json")
-}
-
 func sendReaction() {
-	resp, err := cli.Messages.SendReaction(123123123, "messageid", "")
+	resp, err := cli.Messages.SendReaction(11111, "mid", "👇")
 	if err != nil {
 		log.Fatalf("failed to send reaction: %e", err)
 	}
@@ -73,8 +63,8 @@ func sendReaction() {
 }
 
 func sendMessageWithMedia() {
-	mediaData, _ := os.ReadFile("test.jpeg")
-	turtleData, _ := os.ReadFile("turtle.jpeg")
+	mediaData, _ := os.ReadFile("test_files/test.jpeg")
+	turtleData, _ := os.ReadFile("test_files/turtle.jpeg")
 
 	medias := []*messagix.MercuryUploadMedia{
 		{Filename: "test_image.jpg", MediaType: messagix.IMAGE_JPEG, MediaData: mediaData},
@@ -86,21 +76,30 @@ func sendMessageWithMedia() {
 		log.Fatalf("failed: %e", err)
 	}
 
-	mediaIds := make([]int64, 0)
-	for _, m := range mediaUploads {
-		switch data := m.Payload.Metadata.(type) {
-		case *types.ImageMetadata:
-			mediaIds = append(mediaIds, data.Fbid)
-		case *types.VideoMetadata:
-			mediaIds = append(mediaIds, data.VideoID)
-		}
+	cli.Logger.Info().Any("uploads", mediaUploads).Msg("Media uploads")
+
+	sendMsgBuilder := cli.Threads.NewMessageBuilder(1111111)
+	sendMsgBuilder.SetMedias(mediaUploads)
+	sendMsgBuilder.SetText("media test :D")
+	sendMsgBuilder.SetLastReadWatermarkTs(1696261558117)
+
+	tableResp, err := sendMsgBuilder.Execute() // make sure to execute to send the task
+	if err != nil {
+		log.Fatalf("failed to send media: %e", err)
 	}
 
-	cli.Logger.Info().Any("mediaIds", mediaIds).Msg("Sending mediaIds")
-	sendMsgBuilder := cli.Threads.NewMessageBuilder(1231231323)
-	sendMsgBuilder.SetMediaIDs(mediaIds)
-	sendMsgBuilder.SetText("media test")
-	sendMsgBuilder.SetLastReadWatermarkTs(1695421957450)
+	log.Println(tableResp)
+}
 
-	sendMsgBuilder.Execute() // make sure to execute to send the task
+func sendMessageText() {
+	msgBuilder := cli.Threads.NewMessageBuilder(11111)
+	msgBuilder.SetInitiatingSource(table.FACEBOOK_INBOX)
+	msgBuilder.SetLastReadWatermarkTs(16962611558117)
+	msgBuilder.SetSource(table.MESSENGER_INBOX_IN_THREAD)
+	msgBuilder.SetText("hello there")
+	tableResp, err := msgBuilder.Execute()
+	if err != nil {
+		log.Fatalf("failed to send text msg: %e", err)
+	}
+	log.Println(tableResp)
 }

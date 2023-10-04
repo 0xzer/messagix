@@ -284,3 +284,18 @@ type LSQueryAdditionalGroupThreads struct {
     NumMessages int64 `index:"1"`
     AdditionalPagesToFetch int64 `index:"2"`
 }
+
+type LSDeleteThenInsertIgThreadInfo struct {
+    ThreadKey int64 `index:"0"`
+    IgThreadId string `index:"1"`
+}
+
+type LSMarkThreadRead struct {
+    LastReadWatermarkTimestampMs int64 `index:"0"`
+    ThreadKey int64 `index:"1"`
+}
+
+type LSUpdateParentFolderReadWatermark struct {
+    ThreadKey int64 `index:"0"`
+    // ShouldUpdate bool `index:"1"` // condition ?
+}

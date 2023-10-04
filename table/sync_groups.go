@@ -72,12 +72,12 @@ type LSUpsertTheme struct {
     NormalThemeId int64 `index:"0"`
     ThemeIdx int64 `index:"1"`
     FallbackColor int64 `index:"2"`
-    ReverseGradiantsForRadial int64 `index:"3"`
-    AccessibilityLabel int64 `index:"4"`
-    IconUrl int64 `index:"5"`
-    IconUrlFallback int64 `index:"6"`
-    BackgroundUrl int64 `index:"8"`
-    IsDeprecated int64 `index:"11"`
+    ReverseGradiantsForRadial bool `index:"3"`
+    AccessibilityLabel string `index:"4"`
+    IconUrl string `index:"5"`
+    IconUrlFallback string `index:"6"`
+    BackgroundUrl string `index:"8"`
+    IsDeprecated bool `index:"11"`
     AppColorMode int64 `index:"13"`
     TitlebarBackgroundColor int64 `index:"14"`
     TitlebarButtonTintColor int64 `index:"15"`
@@ -113,4 +113,8 @@ type LSAppendDataTraceAddon struct {
     SyncChannel int64 `index:"2"`
     ErrorMessage string `index:"3"`
     Tags string `index:"4"`
+}
+
+type LSTruncatePresenceDatabase struct {
+    ShouldTruncate bool `index:"0"`
 }

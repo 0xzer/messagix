@@ -27,6 +27,9 @@ type SchedulerJSDefine struct {
 	LSPlatformMessengerSyncParams LSPlatformMessengerSyncParams
 	ServerNonce ServerNonce
 	InitialCookieConsent InitialCookieConsent
+	InstagramPasswordEncryption InstagramPasswordEncryption
+	XIGSharedData XIGSharedData
+	RelayAPIConfigDefaults RelayAPIConfigDefaults
 }
 
 type SchedulerJSRequire struct {

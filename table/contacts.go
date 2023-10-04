@@ -35,7 +35,7 @@ type LSDeleteThenInsertContact struct {
     IsMessengerUser bool `index:"11"`
     IsMemorialized bool `index:"12"`
     BlockedByViewerStatus int64 `index:"14"`
-    Rank int `index:"17"`
+    Rank float64 `index:"17"`
     FirstName string `index:"18"`
     ContactType int64 `index:"19"`
     ContactTypeExact int64 `index:"20"`
@@ -64,4 +64,23 @@ type LSDeleteThenInsertContact struct {
     RestrictionType int64 `index:"44"`
     WaConnectStatus int64 `index:"45"`
     FbUnblockedSinceTimestampMs int64 `index:"46"`
+}
+
+type LSDeleteThenInsertContactPresence struct {
+    ContactId int64 `index:"0"`
+    Status int64 `index:"1"` // make enum ?
+    LastActiveTimestampMs int64 `index:"2"`
+    ExpirationTimestampMs int64 `index:"3"`
+    Capabilities int64 `index:"4"`
+    PublishId string `index:"5"`
+}
+
+type LSDeleteThenInsertIGContactInfo struct {
+    ContactId int64 `index:"0"`
+    IgId string `index:"1"`
+    LinkedFbid int64 `index:"2"`
+    IgFollowStatus int64 `index:"4"`
+    VerificationStatus int64 `index:"5"`
+    E2eeEligibility int64 `index:"6"`
+    SupportsE2eeSpamdStorage bool `index:"7"`
 }

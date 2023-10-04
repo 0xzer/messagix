@@ -8,6 +8,7 @@ import (
 	"github.com/0xzer/messagix/methods"
 	"github.com/0xzer/messagix/socket"
 	"github.com/0xzer/messagix/table"
+	"github.com/0xzer/messagix/types"
 )
 
 type Threads struct {
@@ -50,6 +51,7 @@ func (t *Threads) NewMessageBuilder(threadId int64) *MessageBuilder {
 			ThreadId: threadId,
 			SkipUrlPreviewGen: 0,
 			TextHasLinks: 0,
+			AttachmentFBIds: make([]int64, 0),
 		},
 		readPayload: &socket.ThreadMarkReadTask{
 			ThreadId: threadId,
@@ -58,8 +60,15 @@ func (t *Threads) NewMessageBuilder(threadId int64) *MessageBuilder {
 	}
 }
 
-func (m *MessageBuilder) SetMediaIDs(ids []int64) {
-	m.payload.AttachmentFBIds = ids
+func (m *MessageBuilder) SetMedias(medias []*types.MercuryUploadResponse) {
+	for _, media := range medias {
+		data, ok := media.Payload.Metadata.(types.MediaMetadata)
+		if !ok {
+			log.Println("failed to convert media passed to types.MediaMetadata interface{}")
+		}
+
+		m.payload.AttachmentFBIds = append(m.payload.AttachmentFBIds, data.GetFbId())
+	}
 }
 
 func (m *MessageBuilder) SetReplyMetadata(replyMetadata *socket.ReplyMetaData) *MessageBuilder {
@@ -136,15 +145,7 @@ func (m *MessageBuilder) Execute() (*table.LSTable, error){
 	}
 
 	if len(m.payload.AttachmentFBIds) > 0 {
-		tskm.AddNewTask(&socket.SendMessageTask{
-			ThreadId: m.payload.ThreadId,
-			Otid: strconv.Itoa(otid+100),
-			Source: m.payload.Source,
-			SyncGroup: m.payload.SyncGroup,
-			ReplyMetaData: m.payload.ReplyMetaData,
-			SendType: table.MEDIA,
-			AttachmentFBIds: m.payload.AttachmentFBIds,
-		})
+		m.addAttachmentTasks(tskm)
 	}
 
 	tskm.AddNewTask(m.readPayload)
@@ -167,4 +168,32 @@ func (m *MessageBuilder) Execute() (*table.LSTable, error){
 	resp.Finish()
 
 	return &resp.Table, nil
+}
+
+func (m *MessageBuilder) addAttachmentTasks(tskm *TaskManager) {
+	if m.client.platform == types.Facebook {
+		otid := int(methods.GenerateEpochId())
+		tskm.AddNewTask(&socket.SendMessageTask{
+			ThreadId: m.payload.ThreadId,
+			Otid: strconv.Itoa(otid+100),
+			Source: m.payload.Source,
+			SyncGroup: m.payload.SyncGroup,
+			ReplyMetaData: m.payload.ReplyMetaData,
+			SendType: table.MEDIA,
+			AttachmentFBIds: m.payload.AttachmentFBIds,
+		})
+	} else {
+		for _, mediaId := range m.payload.AttachmentFBIds {
+			otid := int(methods.GenerateEpochId())
+			tskm.AddNewTask(&socket.SendMessageTask{
+				ThreadId: m.payload.ThreadId,
+				Otid: strconv.Itoa(otid+100),
+				Source: m.payload.Source,
+				SyncGroup: m.payload.SyncGroup,
+				ReplyMetaData: m.payload.ReplyMetaData,
+				SendType: table.MEDIA,
+				AttachmentFBIds: []int64{mediaId},
+			})
+		}
+	}
 }

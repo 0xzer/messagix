@@ -10,6 +10,10 @@ type MercuryUploadResponse struct {
 	Lid     string  `json:"lid,omitempty"`
 }
 
+type MediaMetadata interface {
+	GetFbId() int64
+}
+
 type ImageMetadata struct {
 	ImageID  int64  `json:"image_id,omitempty"`
 	Filename string `json:"filename,omitempty"`
@@ -18,11 +22,19 @@ type ImageMetadata struct {
 	Fbid     int64  `json:"fbid,omitempty"`
 }
 
+func (img *ImageMetadata) GetFbId() int64 {
+	return img.Fbid
+}
+
 type VideoMetadata struct {
 	VideoID      int64  `json:"video_id,omitempty"`
 	Filename     string `json:"filename,omitempty"`
 	Filetype     string `json:"filetype,omitempty"`
 	ThumbnailSrc string `json:"thumbnail_src,omitempty"`
+}
+
+func (vid *VideoMetadata) GetFbId() int64 {
+	return vid.VideoID
 }
 
 /*

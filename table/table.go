@@ -85,9 +85,35 @@ type LSTable struct {
 	LSWriteCTAIdToThreadsTable []LSWriteCTAIdToThreadsTable
 	LSQueryAdditionalGroupThreads []LSQueryAdditionalGroupThreads
 	LSReplaceOptimisticReaction []LSReplaceOptimisticReaction
+	LSDeleteThenInsertMessageRequest []LSDeleteThenInsertMessageRequest
+	LSDeleteThenInsertIgThreadInfo []LSDeleteThenInsertIgThreadInfo
+	LSDeleteThenInsertContactPresence []LSDeleteThenInsertContactPresence
+	LSTruncatePresenceDatabase []LSTruncatePresenceDatabase
+	LSMarkThreadRead []LSMarkThreadRead
+	LSUpdateParentFolderReadWatermark []LSUpdateParentFolderReadWatermark
+	LSInsertAttachmentItem []LSInsertAttachmentItem
+	LSGetFirstAvailableAttachmentCTAID []LSGetFirstAvailableAttachmentCTAID
+	LSInsertAttachmentCta []LSInsertAttachmentCta
+	LSUpdateAttachmentItemCtaAtIndex []LSUpdateAttachmentItemCtaAtIndex
+	LSUpdateAttachmentCtaAtIndexIgnoringAuthority []LSUpdateAttachmentCtaAtIndexIgnoringAuthority
+	LSHasMatchingAttachmentCTA []LSHasMatchingAttachmentCTA
+	LSDeleteThenInsertIGContactInfo []LSDeleteThenInsertIGContactInfo
 }
 
 var SPTable = map[string]string{
+	"deleteThenInsertIGContactInfo": "LSDeleteThenInsertIGContactInfo",
+	"hasMatchingAttachmentCTA": "LSHasMatchingAttachmentCTA",
+	"updateAttachmentCtaAtIndexIgnoringAuthority": "LSUpdateAttachmentCtaAtIndexIgnoringAuthority",
+	"updateAttachmentItemCtaAtIndex": "LSUpdateAttachmentItemCtaAtIndex",
+	"insertAttachmentCta": "LSInsertAttachmentCta",
+	"getFirstAvailableAttachmentCTAID": "LSGetFirstAvailableAttachmentCTAID",
+	"insertAttachmentItem": "LSInsertAttachmentItem",
+	"updateParentFolderReadWatermark": "LSUpdateParentFolderReadWatermark",
+	"markThreadRead": "LSMarkThreadRead",
+	"truncatePresenceDatabase": "LSTruncatePresenceDatabase",
+	"deleteThenInsertContactPresence": "LSDeleteThenInsertContactPresence",
+	"deleteThenInsertIgThreadInfo": "LSDeleteThenInsertIgThreadInfo",
+	"deleteThenInsertMessageRequest": "LSDeleteThenInsertMessageRequest",
 	"replaceOptimisticReaction": "LSReplaceOptimisticReaction",
 	"queryAdditionalGroupThreads": "LSQueryAdditionalGroupThreads",
 	"writeCTAIdToThreadsTable": "LSWriteCTAIdToThreadsTable",

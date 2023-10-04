@@ -1,19 +1,12 @@
 package crypto
 
 import (
-	"bytes"
-	"encoding/base64"
-	"errors"
-	"fmt"
 	"math"
 	"math/rand"
-	"strconv"
 	"strings"
 	"time"
 )
 
-var publicKeyBytes = []byte{112, 66, 93, 156, 50, 121, 240, 253, 56, 85, 221, 100, 205, 85, 136, 210, 223, 208, 254, 119, 22, 59, 215, 182, 80, 225, 48, 75, 95, 37, 19, 91}
-var publicKeyId int = 180
 var b64Charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 const (
 	b = rune(32)
@@ -30,43 +23,6 @@ const (
 	avgTypingInterval = 150
 	stdDevTypingInterval = 50
 )
-var (
-    ErrRandomReadFailed = errors.New("failed to encrypt pw: random read failed")
-    ErrAESCreation      = errors.New("failed to encrypt pw: AES cipher creation failed")
-    ErrGCMCreation      = errors.New("failed to encrypt pw: GCM mode creation failed")
-)
-
-func EncryptPassword(password string) (string, error) {
-	buf := bytes.NewBuffer(nil)
-	ts := []byte(strconv.Itoa(int(time.Now().Unix())))
-	pwBytes := []byte(password)
-	buf.WriteByte(1)
-	buf.WriteByte(byte(publicKeyId))
-
-	aesKey, aeadCipher, err := generateAESGCMKey(32)
-	if err != nil {
-		return "", err
-	}
-
-	encryptedData, err := encryptAESGCM(aeadCipher, pwBytes, ts)
-	if err != nil {
-		return "", err
-	}
-
-	sharedSecret, err := encryptWithNaCl(aesKey)
-	if err != nil {
-		return "", err
-	}
-
-	buf.Write([]byte{byte(len(sharedSecret)), byte(len(sharedSecret) >> 8 & 255)})
-	buf.Write(sharedSecret)
-	buf.Write(encryptedData[len(encryptedData)-16:])
-	buf.Write(encryptedData[:len(encryptedData)-16])
-	
-	finalString := base64.StdEncoding.EncodeToString(buf.Bytes())
-
-	return fmt.Sprintf("#PWD_BROWSER:5:%s:%s", string(ts), finalString), nil
-}
 
 type ABTestData struct {
 	result []float64

@@ -9,21 +9,24 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/0xzer/messagix/cookies"
+	"github.com/0xzer/messagix/data/endpoints"
+	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/types"
 	"github.com/google/go-querystring/query"
 	"github.com/rs/zerolog"
 )
 
-var USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36"
+var USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
 var ErrRedirectAttempted = errors.New("redirect attempted")
 
 type EventHandler func(evt interface{})
-type Proxy func(*http.Request) (*url.URL, error)
 type Client struct {
 	Account *Account
 	Threads *Threads
 	Messages *Messages
-
+	Instagram *InstagramMethods
+	Facebook *FacebookMethods
 	Logger zerolog.Logger
 
 	http *http.Client
@@ -32,16 +35,17 @@ type Client struct {
 	configs *Configs
 	syncManager *SyncManager
 
-	cookies *types.Cookies
-	proxy Proxy
+	cookies cookies.Cookies
+	proxy func(*http.Request) (*url.URL, error)
 
 	lsRequests int
 	graphQLRequests int
+	platform types.Platform
+	endpoints map[string]string
 }
 
 // pass an empty zerolog.Logger{} for no logging
-func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Client {
-
+func NewClient(platform types.Platform, cookies cookies.Cookies, logger zerolog.Logger, proxy string) *Client {
 	cli := &Client{
 		http: &http.Client{
 			Transport: &http.Transport{},
@@ -50,11 +54,13 @@ func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Cli
 		Logger: logger,
 		lsRequests: 0,
 		graphQLRequests: 1,
+		platform: platform,
 	}
 
 	cli.Account = &Account{client: cli}
-	cli.Threads = &Threads{client: cli}
 	cli.Messages = &Messages{client: cli}
+	cli.Threads = &Threads{client: cli}
+	cli.configurePlatformClient()
 	cli.configs = &Configs{client: cli, needSync: false}
 	if proxy != "" {
 		err := cli.SetProxy(proxy)
@@ -63,7 +69,7 @@ func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Cli
 		}
 	}
 
-	if cookies == nil || cookies.Xs == "" {
+	if !cli.cookies.IsLoggedIn() {
 		return cli
 	}
 
@@ -71,7 +77,7 @@ func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Cli
 	cli.socket = socket
 
 	moduleLoader := &ModuleParser{client: cli}
-	moduleLoader.load("https://www.facebook.com/messages")
+	moduleLoader.Load(cli.getEndpoint("messages"))
 
 	cli.syncManager = cli.NewSyncManager()
 	configSetupErr := cli.configs.SetupConfigs()
@@ -82,16 +88,41 @@ func NewClient(cookies *types.Cookies, logger zerolog.Logger, proxy string) *Cli
 	return cli
 }
 
+func (c *Client) loadLoginPage() *ModuleParser {
+	moduleLoader := &ModuleParser{client: c}
+    moduleLoader.Load(c.getEndpoint("login_page"))
+	return moduleLoader
+}
+
+func (c *Client) configurePlatformClient() {
+	var selectedEndpoints map[string]string
+	var cookieStruct cookies.Cookies
+	switch c.platform {
+	case types.Facebook:
+		selectedEndpoints = endpoints.FacebookEndpoints
+		cookieStruct = &cookies.FacebookCookies{}
+		c.Facebook = &FacebookMethods{client: c}
+	case types.Instagram:
+		selectedEndpoints = endpoints.InstagramEndpoints
+		cookieStruct = &cookies.InstagramCookies{}
+		c.Instagram = &InstagramMethods{client: c}
+	}
+
+	c.endpoints = selectedEndpoints
+	if c.cookies == nil {
+		c.cookies = cookieStruct
+	}
+}
+
 func (c *Client) SetProxy(proxy string) error {
 	proxyParsed, err := url.Parse(proxy)
 	if err != nil {
 		return err
 	}
-	proxyUrl := http.ProxyURL(proxyParsed)
+
 	c.http.Transport = &http.Transport{
-		Proxy: proxyUrl,
+		Proxy: http.ProxyURL(proxyParsed),
 	}
-	c.proxy = proxyUrl
 	c.Logger.Debug().Any("addr", proxyParsed.Host).Msg("Proxy Updated")
 	return nil
 }
@@ -113,42 +144,69 @@ func (c *Client) SaveSession(path string) error {
 	return os.WriteFile(path, jsonBytes, os.ModePerm)
 }
 
-var cookieConsentUrl = "https://www.facebook.com/cookie/consent/"
 func (c *Client) sendCookieConsent(jsDatr string) error {
-	h := c.buildHeaders()
+	
+	var payloadQuery interface{}
+	h := c.buildHeaders(false)
 	h.Add("sec-fetch-dest", "empty")
 	h.Add("sec-fetch-mode", "cors")
-	h.Add("sec-fetch-site", "same-origin") // header is required, otherwise they dont send the csr bitmap data in the response. lets also include the other headers to be sure
-	h.Add("sec-fetch-user", "?1")
-	h.Add("host", "www.facebook.com")
-	h.Add("upgrade-insecure-requests", "1")
-	h.Add("origin", "https://www.facebook.com")
-	h.Add("cookie", "_js_datr="+jsDatr)
-	h.Add("referer", "https://www.facebook.com/login")
 
-	payload := c.NewHttpQuery()
-	payload.AcceptOnlyEssential = "false"
-	form, err := query.Values(payload)
+	if c.platform == types.Facebook {
+		h.Add("sec-fetch-site", "same-origin") // header is required
+		h.Add("sec-fetch-user", "?1")
+		h.Add("host", c.getEndpoint("host"))
+		h.Add("upgrade-insecure-requests", "1")
+		h.Add("origin", c.getEndpoint("base_url"))
+		h.Add("cookie", "_js_datr="+jsDatr)
+		h.Add("referer", c.getEndpoint("login_page"))
+		q := c.NewHttpQuery()
+		q.AcceptOnlyEssential = "false"
+		payloadQuery = q
+	} else {
+		h.Add("sec-fetch-site", "same-site") // header is required
+		h.Add("host", c.getEndpoint("host"))
+		h.Add("origin", c.getEndpoint("base_url"))
+		h.Add("referer", c.getEndpoint("base_url") + "/")
+		h.Add("x-instagram-ajax", c.configs.siteConfig.ServerRevision)
+		variables, err := json.Marshal(&types.InstagramCookiesVariables{
+			FirstPartyTrackingOptIn: true,
+			IgDid: c.cookies.GetValue("ig_did"),
+			ThirdPartyTrackingOptIn: true,
+			Input: struct{ClientMutationID int "json:\"client_mutation_id,omitempty\""}{0},
+		})
+		h.Del("x-csrftoken")
+		if err != nil {
+			return fmt.Errorf("failed to marshal *types.InstagramCookiesVariables into bytes: %e", err)
+		}
+		q := &HttpQuery{
+			DocID: "3810865872362889",
+			Variables: string(variables),
+		}
+		payloadQuery = q
+	}
+
+	form, err := query.Values(payloadQuery)
 	if err != nil {
 		return err
 	}
 
-	payloadBytes := []byte(form.Encode())
-	req, _, err := c.MakeRequest(cookieConsentUrl, "POST", h, payloadBytes, types.FORM)
+	payload := []byte(form.Encode())
+	req, _, err := c.MakeRequest(c.getEndpoint("cookie_consent"), "POST", h, payload, types.FORM)
 	if err != nil {
 		return err
 	}
 
-	datr := c.findCookie(req.Cookies(), "datr")
-	if datr == nil {
-		return fmt.Errorf("consenting to cookies failed, could not find datr cookie in set-cookie header")
+	if c.platform == types.Facebook {
+		datr := c.findCookie(req.Cookies(), "datr")
+		if datr == nil {
+			return fmt.Errorf("consenting to facebook cookies failed, could not find datr cookie in set-cookie header")
+		}
+	
+		c.cookies = &cookies.FacebookCookies{
+			Datr: datr.Value,
+			Wd: "2276x1156",
+		}
 	}
-
-	c.cookies = &types.Cookies{
-		Datr: datr.Value,
-		Wd: "901x1156",
-	}
-
 	return nil
 }
 
@@ -160,4 +218,33 @@ func (c *Client) disableRedirects() {
 	c.http.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return ErrRedirectAttempted
 	}
+}
+
+func (c *Client) getEndpoint(name string) string {
+    if endpoint, ok := c.endpoints[name]; ok {
+        return endpoint
+    }
+
+    log.Fatalf("failed to find endpoint for name: %s (platform=%v)", name, c.platform)
+    return ""
+}
+
+func (c *Client) IsAuthenticated() bool {
+	var isAuthenticated bool
+	if c.platform == types.Facebook {
+		isAuthenticated = modules.SchedulerJSDefined.CurrentUserInitialData.AccountID != "0"
+	} else {
+		isAuthenticated = modules.SchedulerJSDefined.XIGSharedData.Native.Config.ViewerID != ""
+	}
+	return isAuthenticated
+}
+
+func (c *Client) CurrentPlatform() string {
+	var s string
+	if c.platform == types.Facebook {
+		s = "Facebook"
+	} else {
+		s = "Instagram"
+	}
+	return s
 }

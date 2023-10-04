@@ -3,6 +3,7 @@ package types
 import (
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/0xzer/messagix/crypto"
 )
@@ -45,10 +46,16 @@ func (m *MQTTConfig) BuildBrokerUrl() string {
 	query.Add("cid", m.Cid)
 	query.Add("sid", strconv.Itoa(int(m.SessionId)))
 	
-	return m.Broker + "&" + query.Encode()
+	encodedQuery := query.Encode()
+	if !strings.HasSuffix(m.Broker, "=") {
+		return m.Broker + encodedQuery
+	} else {
+		return m.Broker + "&" + encodedQuery
+	}
 }
 
 type SiteConfig struct {
+	ServerRevision string
 	AccountId string
 	AccountIdInt int64
 	Bitmap *crypto.Bitmap

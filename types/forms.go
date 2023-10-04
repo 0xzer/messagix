@@ -32,3 +32,33 @@ type LgnDim struct {
 	Ah int `json:"ah,omitempty"`
 	C  int `json:"c,omitempty"`
 }
+
+type InstagramCookiesVariables struct {
+	FirstPartyTrackingOptIn bool   `json:"first_party_tracking_opt_in,omitempty"`
+	IgDid                   string `json:"ig_did,omitempty"`
+	ThirdPartyTrackingOptIn bool   `json:"third_party_tracking_opt_in,omitempty"`
+	Input                   struct {
+		ClientMutationID int `json:"client_mutation_id,omitempty"`
+	} `json:"input,omitempty"`
+}
+
+type InstagramLoginPayload struct {
+	Password string `url:"enc_password"`
+	OptIntoOneTap bool `url:"optIntoOneTap"`
+	QueryParams string `url:"queryParams"`
+	TrustedDeviceRecords string `url:"trustedDeviceRecords"`
+	Username string `url:"username"`
+}
+
+type InstagramLoginResponse struct {
+	Authenticated bool   `json:"authenticated,omitempty"`
+	Status        string `json:"status,omitempty"`
+	User          bool   `json:"user,omitempty"`
+	Message       string `json:"message,omitempty"`
+	UserID        string `json:"userId,omitempty"`
+	OneTapPrompt  bool   `json:"oneTapPrompt,omitempty"`
+	Reactivated   bool   `json:"reactivated,omitempty"`
+	CheckpointUrl string `json:"checkpoint_url,omitempty"`
+	FlowRenderType int `json:"flow_render_type,omitempty"`
+	Lock 		  bool `json:"lock,omitempty"`
+}

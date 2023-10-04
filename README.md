@@ -36,7 +36,6 @@ import (
 	"log"
 	"os"
 	"testing"
-
 	"github.com/0xzer/messagix"
 	"github.com/0xzer/messagix/debug"
 	"github.com/0xzer/messagix/types"

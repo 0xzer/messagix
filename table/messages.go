@@ -141,7 +141,7 @@ type LSInsertMessage struct {
     ReplySourceType int64 `index:"24"`
     ReplySourceTypeV2 int64 `index:"25"`
     ReplyStatus int64 `index:"26"`
-    ReplySnippet int64 `index:"27"`
+    ReplySnippet string `index:"27"`
     ReplyMessageText string `index:"28"`
     ReplyToUserId int64 `index:"29"`
     ReplyMediaExpirationTimestampMs int64 `index:"30"`
@@ -272,7 +272,7 @@ type LSDeleteThenInsertMessage struct {
     IsCollapsed bool `index:"61"`
     SubthreadKey int64 `index:"62"`
     BotResponseId int64 `index:"63"`
-    IsPaidPartnership bool `index:"64"`
+    IsPaidPartnership int64 `index:"64"`
 }
 
 // can't spell ?
@@ -293,4 +293,10 @@ type LSReplaceOptimisticReaction struct {
     ThreadKey int64 `index:"0"`
     ActorId int64 `index:"1"`
     MessageId string `index:"2"`
+}
+
+type LSDeleteThenInsertMessageRequest struct {
+    ThreadKey int64 `index:"0"`
+    Unknown int64 `index:"1"`
+    MessageRequestStatus int64 `index:"2"` // make enum ?
 }

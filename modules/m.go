@@ -195,8 +195,8 @@ func handleRequire(modName string, data []interface{}) error {
 							return fmt.Errorf("could not find result in __bbox for parser func: %s", parserFunc)
 						}
 
-						if parserFunc == "LSPlatformGraphQLLightspeedRequestQuery" {
-							handleLightSpeedQLRequest(result)
+						if parserFunc == "LSPlatformGraphQLLightspeedRequestQuery" || parserFunc == "LSPlatformGraphQLLightspeedRequestForIGDQuery" {
+							handleLightSpeedQLRequest(result, parserFunc)
 						} else {
 							handleGraphQLData(parserFunc, result)
 						}
@@ -206,21 +206,39 @@ func handleRequire(modName string, data []interface{}) error {
 	return nil
 }
 
-func handleLightSpeedQLRequest(data interface{}) {
-	var lsData *graphql.LSPlatformGraphQLLightspeedRequestQuery
-	err := InterfaceToStructJSON(&data, &lsData)
-	if err != nil {
-		log.Fatalf("failed to parse LightSpeedQLRequest data from html: %e", err)
+func handleLightSpeedQLRequest(data interface{}, parserFunc string) {
+	var lsPayloadStr string
+	var deps interface{}
+	switch parserFunc {
+	case "LSPlatformGraphQLLightspeedRequestForIGDQuery":
+		var lsData *graphql.LSPlatformGraphQLLightspeedRequestForIGDQuery
+		err := InterfaceToStructJSON(&data, &lsData)
+		if err != nil {
+			log.Fatalf("failed to parse LightSpeedQLRequest data from html (INSTAGRAM): %e", err)
+		}
+		lsPayloadStr = lsData.Data.LightspeedWebRequestForIgd.Payload
+		deps = lsData.Data.LightspeedWebRequestForIgd.Dependencies
+	case "LSPlatformGraphQLLightspeedRequestQuery":
+		var lsData *graphql.LSPlatformGraphQLLightspeedRequestQuery
+		err := InterfaceToStructJSON(&data, &lsData)
+		if err != nil {
+			log.Fatalf("failed to parse LightSpeedQLRequest data from html (FACEBOOK): %e", err)
+		}
+		lsPayloadStr = lsData.Data.Viewer.LightspeedWebRequest.Payload
+		deps = lsData.Data.Viewer.LightspeedWebRequest.Dependencies
 	}
 	
-	lsPayload := lsData.Data.Viewer.LightspeedWebRequest.Payload
-	dependencies := lightspeed.DependenciesToMap(lsData.Data.Viewer.LightspeedWebRequest.Dependencies)
+	if lsPayloadStr == "" { // skip cuz payload null
+		return
+	}
+
+	dependencies := lightspeed.DependenciesToMap(deps)
 	decoder := lightspeed.NewLightSpeedDecoder(dependencies, SchedulerJSRequired.LSTable)
 	
 	var payload lightspeed.LightSpeedData
-	err = json.Unmarshal([]byte(lsPayload), &payload)
+	err := json.Unmarshal([]byte(lsPayloadStr), &payload)
 	if err != nil {
-		log.Fatalf("failed to marshal lsPayload into LightSpeedData: %e", err)
+		log.Fatalf("failed to marshal lsPayloadStr into LightSpeedData: %e", err)
 	}
 	
 	decoder.Decode(payload.Steps)

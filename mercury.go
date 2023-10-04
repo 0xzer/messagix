@@ -8,7 +8,6 @@ import (
 	"mime/multipart"
 	"net/textproto"
 	"reflect"
-
 	"github.com/0xzer/messagix/methods"
 	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/types"
@@ -27,7 +26,6 @@ type MercuryUploadMedia struct {
 	MediaData []byte
 }
 
-var MERCURY_UPLOAD_URL = "https://www.facebook.com/ajax/mercury/upload.php?"
 func (c *Client) SendMercuryUploadRequest(medias []*MercuryUploadMedia) ([]*types.MercuryUploadResponse, error) {
 	responses := make([]*types.MercuryUploadResponse, 0)
 	for _, media := range medias {
@@ -37,14 +35,14 @@ func (c *Client) SendMercuryUploadRequest(medias []*MercuryUploadMedia) ([]*type
 			return nil, fmt.Errorf("failed to convert HttpQuery into query.Values for mercury upload: %e", err)
 		}
 
-		payloadBytes := queryValues.Encode()
-		url := MERCURY_UPLOAD_URL + payloadBytes
+		payloadQuery := queryValues.Encode()
+		url := c.getEndpoint("media_upload") + payloadQuery
 		payload, contentType := c.NewMercuryMediaPayload(media)
 
-		h := c.buildHeaders()
+		h := c.buildHeaders(true)
 		h.Add("content-type", contentType)
-		h.Add("origin", "https://www.facebook.com")
-		h.Add("referer", "https://www.facebook.com/messages")
+		h.Add("origin", c.getEndpoint("base_url"))
+		h.Add("referer", c.getEndpoint("messages"))
 		h.Add("sec-fetch-dest", "empty")
 		h.Add("sec-fetch-mode", "cors")
 		h.Add("sec-fetch-site", "same-origin") // header is required

@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/0xzer/messagix/cookies"
 	"github.com/0xzer/messagix/methods"
 	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/types"
@@ -48,15 +50,24 @@ type InputTag struct {
 
 type ModuleParser struct {
 	client *Client
+	testData []byte
 	FormTags []FormTag
 	LoginInputs []InputTag
 	JSDatr string
 }
 
+func (m *ModuleParser) SetClientInstance(cli *Client) {
+	m.client = cli
+}
+
+func (m *ModuleParser) SetTestData(data []byte) {
+	m.testData = data
+}
+
 func (m *ModuleParser) fetchPageData(page string) []byte { // just log.fatal if theres an error because the library should not be able to continue then
-	headers := m.client.buildHeaders()
+	headers := m.client.buildHeaders(true)
 	headers.Add("connection", "keep-alive")
-	headers.Add("host", "www.facebook.com")
+	//headers.Add("host", m.client.getEndpoint("host"))
 	headers.Add("sec-fetch-dest", "document")
 	headers.Add("sec-fetch-mode", "navigate")
 	headers.Add("sec-fetch-site", "none") // header is required, otherwise they dont send the csr bitmap data in the response. lets also include the other headers to be sure
@@ -70,12 +81,19 @@ func (m *ModuleParser) fetchPageData(page string) []byte { // just log.fatal if 
 	return responseBody
 }
 
-func (m *ModuleParser) load(page string) {
-	htmlData := m.fetchPageData(page)
+func (m *ModuleParser) Load(page string) {
+	var htmlData []byte
+	if m.testData == nil {
+		htmlData = m.fetchPageData(page)
+	} else {
+		htmlData = m.testData
+	}
+
 	doc, err := html.Parse(bytes.NewReader(htmlData))
 	if err != nil {
 		log.Fatalf("failed to parse doc string: %e", err)
 	}
+
 	scriptTags := m.findScriptTags(doc)
 	for _, tag := range scriptTags {
 		rel, ok := tag.Attributes["rel"]
@@ -109,10 +127,10 @@ func (m *ModuleParser) load(page string) {
 		}
 	}
 
-	loggedIn := modules.SchedulerJSDefined.CurrentUserInitialData.AccountID != "0"
+	authenticated := m.client.IsAuthenticated()
 	// on certain occasions, the server does not return the lightspeed data or version
 	// when this is the case, the server "preloads" the js files in the link tags, so we need to loop through them until we can find the "LSVersion" module and extract the exported version string
-	if modules.VersionId == 0  && loggedIn {
+	if modules.VersionId == 0  && authenticated {
 		m.client.configs.needSync = true
 		m.client.Logger.Info().Msg("Setting configs.needSync to true")
 		var doneCrawling bool
@@ -134,9 +152,28 @@ func (m *ModuleParser) load(page string) {
 		}
 	}
 
+	if m.client.platform == types.Instagram {
+		sharedData := modules.SchedulerJSDefined.XIGSharedData
+		err = sharedData.ParseRaw()
+		if err != nil {
+			log.Fatalf("failed to parse XIGSharedData raw string into *types.XIGConfigData: %e", err)
+		}
+		m.client.Logger.Info().Any("authenticated", authenticated).Msg("Instagram Authentication Status")
+		if !authenticated {
+			err = cookies.UpdateMultipleValues(
+				m.client.cookies,
+				[]string{"csrftoken", "ig_did", "mid"},
+				[]string{sharedData.ConfigData.Config.CsrfToken, sharedData.Native.DeviceID, methods.GenerateMachineId()},
+			)
+			if err != nil {
+				log.Fatalf("failed to update cookie values for csrftoken, ig_did: %e", err)
+			}
+		}
+	}
+
 	formTags := m.findFormTags(doc)
 	m.FormTags = formTags
-	if !loggedIn {
+	if !authenticated && m.client.platform == types.Facebook {
 		loginNode := m.findNodeByID(doc, "loginform")
 		loginInputs := m.findInputTags(loginNode)
 		m.LoginInputs = loginInputs

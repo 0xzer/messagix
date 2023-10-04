@@ -13,6 +13,8 @@ var TaskLabels = map[string]string{
 	"SyncGroupsTask": "145",
 	"FetchMessagesTask": "228",
 	"SendReactionTask": "29",
+	"DeleteMessageTask": "33",
+	"DeleteMessageMeOnlyTask": "155",
 }
 
 type Task interface {

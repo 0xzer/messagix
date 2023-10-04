@@ -17,9 +17,12 @@ type LightSpeedDecoder struct {
 }
 
 func NewLightSpeedDecoder(dependencies map[string]string, table interface{}) *LightSpeedDecoder {
+	if reflect.ValueOf(table).Kind() != reflect.Ptr {
+		return nil
+	}
 	return &LightSpeedDecoder{
-		Table: table,
-		Dependencies: dependencies,
+		Table:              table,
+		Dependencies:       dependencies,
 		StatementReferences: make(map[int]int64),
 	}
 }
@@ -98,11 +101,17 @@ func (ls *LightSpeedDecoder) Decode(data interface{}) interface{} {
 	case NATIVE_OP_CURRENT_TIME:
 		return time.Now().UnixMilli()
 	case CALL_NATIVE_OPERATION:
-		log.Println("call native operation...")
+		log.Println("call native operation...", stepData)
 		return nil
+	case NATIVE_OP_MAP_CREATE:
+		return make(map[interface{}]interface{}, 0)
 	case LOGGER_LOG:
 		log.Println("[FB-LOGGER] Server log:", stepData[0])
 		return nil
+	case I64_ADD:
+		first := ls.Decode(stepData[0]).(int64)
+		second := ls.Decode(stepData[1]).(int64)
+		return first + second
 	default:
 		log.Println("got unknown step type:", stepType)
 		log.Println(stepData...)
@@ -197,6 +206,13 @@ func (ls *LightSpeedDecoder) handleStoredProcedure(referenceName string, data []
 				continue
 			}
 			newDepInstance.Field(i).SetInt(int64(integer))
+		case reflect.Float64:
+			floatVal, ok := val.(float64)
+			if !ok {
+				log.Println(fmt.Sprintf("failed to set float64 to %v in dependency %v for field %v (index=%d, actualType=%v)", val, depFieldsType.Name(), fieldInfo.Name, index, valType))
+				continue
+			}
+			newDepInstance.Field(i).SetFloat(floatVal)
 		default:
 			log.Println("invalid kind:", kind, val, valType)
 			os.Exit(1)

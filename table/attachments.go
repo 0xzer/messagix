@@ -50,7 +50,7 @@ type LSInsertXmaAttachment struct {
     AttributionAppIconUrlExpirationTimestampMs int64 `index:"19"`
     AttachmentIndex int64 `index:"20"`
     AccessibilitySummaryText string `index:"21"`
-    ShouldRespectServerPreviewSize int64 `index:"22"`
+    ShouldRespectServerPreviewSize bool `index:"22"`
     SubtitleIconUrl string `index:"23"`
     ShouldAutoplayVideo bool `index:"24"`
     ThreadKey int64 `index:"25"`
@@ -119,20 +119,20 @@ type LSInsertXmaAttachment struct {
     ListItemContactUrlFallbackList3 int64 `index:"94"`
     ListItemAccessibilityText3 int64 `index:"95"`
     ListItemTotalCount3 int64 `index:"96"`
-    IsBorderless int64 `index:"100"`
-    HeaderImageUrlMimeType int64 `index:"101"`
-    HeaderTitle int64 `index:"102"`
-    HeaderSubtitleText int64 `index:"103"`
-    HeaderImageUrl int64 `index:"104"`
-    HeaderImageUrlFallback int64 `index:"105"`
+    IsBorderless bool `index:"100"`
+    HeaderImageUrlMimeType string `index:"101"`
+    HeaderTitle string `index:"102"`
+    HeaderSubtitleText string `index:"103"`
+    HeaderImageUrl string `index:"104"`
+    HeaderImageUrlFallback string `index:"105"`
     HeaderImageUrlExpirationTimestampMs int64 `index:"106"`
     PreviewImageDecorationType int64 `index:"107"`
-    ShouldHighlightHeaderTitleInTitle int64 `index:"108"`
+    ShouldHighlightHeaderTitleInTitle bool `index:"108"`
     TargetId int64 `index:"109"`
     AttachmentLoggingType int64 `index:"112"`
-    PreviewUrlLarge int64 `index:"114"`
+    PreviewUrlLarge string `index:"114"`
     GatingType int64 `index:"115"`
-    GatingTitle int64 `index:"116"`
+    GatingTitle string `index:"116"`
     TargetExpiryTimestampMs int64 `index:"117"`
     CountdownTimestampMs int64 `index:"118"`
     ShouldBlurSubattachments int64 `index:"119"`
@@ -189,4 +189,93 @@ type LSInsertBlobAttachment struct {
     SamplingFrequencyHz int64 `index:"46"`
     WaveformData string `index:"47"`
     AuthorityLevel int64 `index:"48"`
+}
+
+type LSInsertAttachmentItem struct {
+    AttachmentFbid string `index:"0"`
+    AttachmentIndex int64 `index:"1"`
+    ThreadKey int64 `index:"2"`
+    MessageId string `index:"4"`
+    OriginalPageSenderId int64 `index:"7"`
+    TitleText int64 `index:"8"`
+    SubtitleText int64 `index:"9"`
+    PlayableUrl int64 `index:"12"`
+    PlayableUrlFallback int64 `index:"13"`
+    PlayableUrlExpirationTimestampMs int64 `index:"14"`
+    PlayableUrlMimeType int64 `index:"15"`
+    DashManifest int64 `index:"16"`
+    PreviewUrl string `index:"17"`
+    PreviewUrlFallback string `index:"18"`
+    PreviewUrlExpirationTimestampMs int64 `index:"19"`
+    PreviewUrlMimeType string `index:"20"`
+    PreviewWidth int64 `index:"21"`
+    PreviewHeight int64 `index:"22"`
+    ImageUrl int64 `index:"23"`
+    DefaultCtaId int64 `index:"24"`
+    DefaultCtaTitle int64 `index:"25"`
+    DefaultCtaType int64 `index:"26"`
+    DefaultButtonType int64 `index:"28"`
+    DefaultActionUrl int64 `index:"29"`
+    DefaultActionEnableExtensions bool `index:"30"`
+    DefaultWebviewHeightRatio int64 `index:"32"`
+    AttachmentCta1Id int64 `index:"34"`
+    Cta1Title int64 `index:"35"`
+    Cta1IconType int64 `index:"36"`
+    Cta1Type int64 `index:"37"`
+    AttachmentCta2Id int64 `index:"39"`
+    Cta2Title int64 `index:"40"`
+    Cta2IconType int64 `index:"41"`
+    Cta2Type int64 `index:"42"`
+    AttachmentCta3Id int64 `index:"44"`
+    Cta3Title int64 `index:"45"`
+    Cta3IconType int64 `index:"46"`
+    Cta3Type int64 `index:"47"`
+    FaviconUrl int64 `index:"48"`
+    FaviconUrlFallback int64 `index:"49"`
+    FaviconUrlExpirationTimestampMs int64 `index:"50"`
+    PreviewUrlLarge int64 `index:"51"`
+}
+
+type LSGetFirstAvailableAttachmentCTAID struct {}
+
+type LSInsertAttachmentCta struct {
+    CtaId int64 `index:"0"`
+    AttachmentFbid string `index:"1"`
+    AttachmentIndex int64 `index:"2"`
+    ThreadKey int64 `index:"3"`
+    MessageId string `index:"5"`
+    Title string `index:"6"`
+    Type_ string `index:"7"`
+    PlatformToken int64 `index:"8"`
+    ActionUrl string `index:"9"`
+    NativeUrl string `index:"10"`
+    UrlWebviewType int64 `index:"11"`
+    ActionContentBlob int64 `index:"12"`
+    EnableExtensions bool `index:"13"`
+    ExtensionHeightType int64 `index:"14"`
+    TargetId int64 `index:"15"`
+}
+
+type LSUpdateAttachmentItemCtaAtIndex struct {
+    AttachmentFbid string `index:"0"`
+    Unknown int64 `index:"1"`
+    AttachmentCtaId int64 `index:"2"`
+    CtaTitle string `index:"3"`
+    CtaType string `index:"4"`
+    Index int64 `index:"5"`
+}
+
+type LSUpdateAttachmentCtaAtIndexIgnoringAuthority struct {
+    ThreadKey int64 `index:"0"`
+    MessageId string `index:"1"`
+    AttachmentFbid string `index:"2"`
+    AttachmentCtaId int64 `index:"3"`
+    CtaTitle string `index:"4"`
+    CtaType string `index:"5"`
+    Index int64 `index:"6"`
+}
+
+type LSHasMatchingAttachmentCTA struct {
+    ThreadKey int64 `index:"0"`
+    AttachmentFbid string `index:"1"`
 }

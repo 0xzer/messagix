@@ -1,7 +1,7 @@
 package messagix
 
 import (
-	"log"
+	"fmt"
 	"reflect"
 	"strconv"
 
@@ -22,17 +22,17 @@ type Configs struct {
 func (c *Configs) SetupConfigs() error {
 	schedulerJS := modules.SchedulerJSDefined
 	if schedulerJS.SiteData == (modules.SiteData{}) {
-		log.Fatalf("SetupConfigs was somehow called before modules were initalized")
+		return fmt.Errorf("SetupConfigs was somehow called before modules were initalized")
 	}
 
-	loggedIn := schedulerJS.CurrentUserInitialData.AccountID != "0"
+	authenticated := c.client.IsAuthenticated()
 	bitmap, csrBitmap := c.LoadBitmaps()
 	c.siteConfig = &types.SiteConfig{
 		AccountId: schedulerJS.CurrentUserInitialData.AccountID,
 		Bitmap: bitmap,
 		CSRBitmap: csrBitmap,
 		HasteSessionId: schedulerJS.SiteData.Hsi,
-		WebSessionId: methods.GenerateWebsessionID(loggedIn),
+		WebSessionId: methods.GenerateWebsessionID(authenticated),
 		LsdToken: schedulerJS.LSD.Token,
 		SpinT: strconv.Itoa(schedulerJS.SiteData.SpinT),
 		SpinB: schedulerJS.SiteData.SpinB,
@@ -41,21 +41,31 @@ func (c *Configs) SetupConfigs() error {
 		Pr: strconv.FormatFloat(schedulerJS.SiteData.Pr, 'f', -1, 64),
 		HasteSession: schedulerJS.SiteData.HasteSession,
 		ConnectionClass: schedulerJS.WebConnectionClassServerGuess.ConnectionClass,
+		ServerRevision: strconv.Itoa(int(schedulerJS.SiteData.ServerRevision)),
 		VersionId: modules.VersionId,
 		Locale: schedulerJS.IntlCurrentLocale.Code,
 		X_ASDB_ID: "129477", // hold off on this and check if it ever changes, if so we gotta load the js file and extract it from there
 	}
 
-	if loggedIn {
+	if authenticated {
 		eqmcQuery, err := modules.JSONData.Eqmc.ParseAjaxURLData()
 		if err != nil {
-			log.Fatalf("failed to parse AjaxURLData from eqmc json struct: %e", err)
+			return fmt.Errorf("failed to parse AjaxURLData from eqmc json struct: %e", err)
 		}
 		accountIdInt, _ := strconv.Atoi(schedulerJS.CurrentUserInitialData.AccountID)
 
 		c.siteConfig.AccountIdInt = int64(accountIdInt)
 		c.siteConfig.Jazoest = eqmcQuery.Jazoest
 		c.siteConfig.CometReq = eqmcQuery.CometReq
+		if c.client.platform == types.Instagram {
+			schedulerJS.MqttWebConfig.Endpoint = "wss://edge-chat.instagram.com/chat?"
+			schedulerJS.MqttWebConfig.AppID = schedulerJS.MessengerWebInitData.AppID
+			userID := c.client.cookies.GetValue("ds_user_id")
+			if userID != "" {
+				accountIdInt, _ := strconv.Atoi(userID)
+				c.siteConfig.AccountIdInt = int64(accountIdInt)
+			}
+		}
 		c.mqttConfig = &types.MQTTConfig{
 			ProtocolName: "MQIsdp",
 			ProtocolLevel: 3,
@@ -68,7 +78,7 @@ func (c *Configs) SetupConfigs() error {
 			Capabilities: schedulerJS.MqttWebConfig.Capabilities,
 			ChatOn: schedulerJS.MqttWebConfig.ChatVisibility,
 			SubscribedTopics: schedulerJS.MqttWebConfig.SubscribedTopics,
-			ConnectionType: "websocket",
+			ConnectionType: c.client.socket.getConnectionType(),
 			HostNameOverride: "",
 			Cid: schedulerJS.MqttWebDeviceID.ClientID,
 		}
@@ -82,12 +92,12 @@ func (c *Configs) SetupConfigs() error {
 				},
 			)
 			if err != nil {
-				log.Fatalf("failed to update sync params for databases: 1, 2, 95")
+				return fmt.Errorf("failed to update sync params for databases: 1, 2, 95")
 			}
 
 			lsData, err := c.client.syncManager.SyncDataGraphQL([]int64{1,2,95})
 			if err != nil {
-				log.Fatalf("failed to sync data via graphql for databases: 1, 2, 95")
+				return fmt.Errorf("failed to sync data via graphql for databases: 1, 2, 95")
 			}
 
 			//c.client.Logger.Info().Any("lsData", lsData).Msg("Synced data through graphql query")
@@ -95,12 +105,12 @@ func (c *Configs) SetupConfigs() error {
 		} else {
 			err := c.client.syncManager.SyncTransactions(modules.SchedulerJSRequired.LSTable.LSExecuteFirstBlockForSyncTransaction)
 			if err != nil {
-				log.Fatalf("failed to sync transactions from js module data with syncManager: %e", err)
+				return fmt.Errorf("failed to sync transactions from js module data with syncManager: %e", err)
 			}
 		}
 		c.client.Logger.Info().Any("value", c.siteConfig.Bitmap.CompressedStr).Msg("Loaded __dyn bitmap")
 		c.client.Logger.Info().Any("value", c.siteConfig.CSRBitmap.CompressedStr).Msg("Loaded __csr bitmap")
-		c.client.Logger.Info().Any("value", c.siteConfig.VersionId).Msg("Loaded versionId")
+		c.client.Logger.Info().Any("versionId", c.siteConfig.VersionId).Any("appId", schedulerJS.CurrentUserInitialData.AppID).Msg("Loaded versionId & appId")
 		c.client.Logger.Info().Any("broker", c.mqttConfig.Broker).Msg("Configs successfully setup!")
 		c.client.Logger.Info().
 		Any("total_messages", len(modules.SchedulerJSRequired.LSTable.LSUpsertMessage)).
@@ -110,8 +120,9 @@ func (c *Configs) SetupConfigs() error {
 	} else {
 		c.client.Logger.Info().Any("value", c.siteConfig.Bitmap.CompressedStr).Msg("Loaded __dyn bitmap")
 		c.client.Logger.Info().Any("value", c.siteConfig.CSRBitmap.CompressedStr).Msg("Loaded __csr bitmap")
-		c.client.Logger.Info().Msg("Configs loaded, but not yet logged in.")
+		c.client.Logger.Info().Any("platform", c.client.platform).Msg("Configs loaded, but not yet logged in.")
 	}
+	
 	return nil
 }
 

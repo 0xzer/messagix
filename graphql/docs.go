@@ -12,6 +12,11 @@ var GraphQLDocs = map[string]GraphQLDoc{
 		CallerClass: "RelayModern",
 		FriendlyName: "LSPlatformGraphQLLightspeedRequestQuery",
 	},
+	"LSGraphQLRequestIG": {
+		DocId: "6195354443842040",
+		CallerClass: "RelayModern",
+		FriendlyName: "LSPlatformGraphQLLightspeedRequestForIGDQuery",
+	},
 }
 
 type LSPlatformGraphQLLightspeedRequestPayload struct {

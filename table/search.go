@@ -34,13 +34,13 @@ type LSInsertSearchResult struct {
     CommunityId int64 `index:"22"`
     OtherUserId int64 `index:"23"`
     ThreadJoinLinkHash int64 `index:"24"`
-    SupportsE2eeSpamdStorage int64 `index:"25"`
+    SupportsE2eeSpamdStorage bool `index:"25"`
     DefaultE2eeThreads bool `index:"26"`
     IsRestrictedByViewer bool `index:"27"`
     DefaultE2eeThreadOneToOne bool `index:"28"`
     HasCutoverThread bool `index:"29"`
     IsViewerUnconnected bool `index:"30"`
-    ResultIgid int64 `index:"31"`
+    ResultIgid string `index:"31"`
 }
 
 type LSInsertSearchSection struct {

@@ -406,3 +406,22 @@ type PresenceStatusProviderSubscriptionComponentQuery struct {
 		IsFinal bool `json:"is_final,omitempty"`
 	} `json:"extensions,omitempty"`
 }
+
+type LSPlatformGraphQLLightspeedRequestForIGDQuery struct {
+	Data struct {
+		LightspeedWebRequestForIgd struct {
+			Dependencies []struct {
+				Name  string `json:"name,omitempty"`
+				Value struct {
+					Dr string `json:"__dr,omitempty"`
+				} `json:"value,omitempty"`
+			} `json:"dependencies,omitempty"`
+			Experiments any    `json:"experiments,omitempty"`
+			Payload     string `json:"payload,omitempty"`
+			Target      string `json:"target,omitempty"`
+		} `json:"lightspeed_web_request_for_igd,omitempty"`
+	} `json:"data,omitempty"`
+	Extensions struct {
+		IsFinal   bool `json:"is_final,omitempty"`
+	} `json:"extensions,omitempty"`
+}

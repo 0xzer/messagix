@@ -3,6 +3,8 @@ package messagix
 import (
 	"encoding/json"
 	"strconv"
+
+	"github.com/0xzer/messagix/modules"
 )
 
 type Connect struct {
@@ -13,7 +15,7 @@ type Connect struct {
 	ChatOn      bool   `json:"chat_on"` // mqttconfig chatVisibility (true) - not 100% sure
 	Fg          bool   `json:"fg"` // idk what this is
 	Cid   string `json:"d"` // cid from html content
-    ConnectionType  string `json:"ct"` // connection type? websocket
+    ConnectionType  string `json:"ct"` // connection type? facebook=websocket , insta=cookie_auth
 	MqttSid     string `json:"mqtt_sid"` // ""
 	AppId       int64  `json:"aid"` // mqttconfig appID (219994525426954)
 	SubscribedTopics	[]any  `json:"st"` // mqttconfig subscribedTopics ([])
@@ -22,7 +24,7 @@ type Connect struct {
 	NoAutoFg    bool   `json:"no_auto_fg"` // only seen true
 	Gas         any    `json:"gas"` // only seen null
 	Pack        []any  `json:"pack"` // only seen empty arr
-	HostNameOverride string `json:"php_override"` // mqttconfig hostNameOverride ("") - not 100% sure
+	HostNameOverride string `json:"php_override"` // mqttconfig hostNameOverride
 	P           any    `json:"p"` // only seen null
 	UserAgent   string `json:"a"` // user agent
 	Aids        any    `json:"aids"` // only seen null
@@ -30,7 +32,7 @@ type Connect struct {
 
 func (s *Socket) newConnectJSON() (string, error) {
 	payload := &Connect{
-		AccountId: s.client.cookies.AccountId,
+		AccountId: modules.SchedulerJSDefined.CurrentUserInitialData.AccountID,
 		SessionId: s.client.configs.mqttConfig.SessionId,
 		ClientCapabilities: s.client.configs.mqttConfig.ClientCapabilities,
 		Capabilities: s.client.configs.mqttConfig.Capabilities,

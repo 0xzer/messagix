@@ -37,15 +37,17 @@ func (c *Client) makeGraphQLRequest(name string, variables interface{}) (*http.R
 
 	payloadBytes := []byte(form.Encode())
 
-	headers := c.buildHeaders()
+	headers := c.buildHeaders(true)
 	headers.Add("x-fb-friendly-name", graphQLDoc.FriendlyName)
 	headers.Add("sec-fetch-dest", "empty")
 	headers.Add("sec-fetch-mode", "cors")
 	headers.Add("sec-fetch-site", "same-origin")
-	headers.Add("origin", "https://www.facebook.com")
-	headers.Add("referer", "https://www.facebook.com/messages/")
+	headers.Add("origin", c.getEndpoint("base_url"))
+	headers.Add("referer", c.getEndpoint("messages") + "/")
 
-	return c.MakeRequest("https://www.facebook.com/api/graphql/", "POST", headers, payloadBytes, types.FORM)
+	reqUrl := c.getEndpoint("graphql")
+	//c.Logger.Info().Any("url", reqUrl).Any("payload", string(payloadBytes)).Any("headers", headers).Msg("Sending graphQL request.")
+	return c.MakeRequest(reqUrl, "POST", headers, payloadBytes, types.FORM)
 }
 
 func (c *Client) makeLSRequest(variables *graphql.LSPlatformGraphQLLightspeedVariables, reqType int) (*table.LSTable, error) {
@@ -63,26 +65,44 @@ func (c *Client) makeLSRequest(variables *graphql.LSPlatformGraphQLLightspeedVar
 	}
 	c.lsRequests++
 
-	_, respBody, err := c.makeGraphQLRequest("LSGraphQLRequest", &lsVariables)
+	var lsRequestQueryName string
+	if c.platform == types.Facebook {
+		lsRequestQueryName = "LSGraphQLRequest"
+	} else {
+		lsRequestQueryName = "LSGraphQLRequestIG"
+	}
+	_, respBody, err := c.makeGraphQLRequest(lsRequestQueryName, &lsVariables)
 	if err != nil {
 		return nil, err
 	}
 
-	var graphQLData *graphql.LSPlatformGraphQLLightspeedRequestQuery
-	err = json.Unmarshal(respBody, &graphQLData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal LSRequest response bytes into LSPlatformGraphQLLightspeedRequestQuery struct: %e", err)
+	var lightSpeedRes []byte
+	var deps interface{}
+	if c.platform == types.Facebook {
+		var graphQLData *graphql.LSPlatformGraphQLLightspeedRequestQuery
+		err = json.Unmarshal(respBody, &graphQLData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal LSRequest response bytes into LSPlatformGraphQLLightspeedRequestQuery struct: %e", err)
+		}
+		lightSpeedRes = []byte(graphQLData.Data.Viewer.LightspeedWebRequest.Payload)
+		deps = graphQLData.Data.Viewer.LightspeedWebRequest.Dependencies
+	} else {
+		var graphQLData *graphql.LSPlatformGraphQLLightspeedRequestForIGDQuery
+		err = json.Unmarshal(respBody, &graphQLData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal LSRequest response bytes into LSPlatformGraphQLLightspeedRequestForIGDQuery struct: %e", err)
+		}
+		lightSpeedRes = []byte(graphQLData.Data.LightspeedWebRequestForIgd.Payload)
+		deps = graphQLData.Data.LightspeedWebRequestForIgd.Dependencies
 	}
-
-	lightSpeedRes := graphQLData.Data.Viewer.LightspeedWebRequest
-
+	
 	var lsData *lightspeed.LightSpeedData
-	err = json.Unmarshal([]byte(lightSpeedRes.Payload), &lsData)
+	err = json.Unmarshal([]byte(lightSpeedRes), &lsData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal LSRequest lightspeed payload into lightspeed.LightSpeedData: %e", err)
 	}
 
-	dependencies := lightspeed.DependenciesToMap(lightSpeedRes.Dependencies)
+	dependencies := lightspeed.DependenciesToMap(deps)
 
 	lsTable := &table.LSTable{}
 	lsDecoder := lightspeed.NewLightSpeedDecoder(dependencies, lsTable)

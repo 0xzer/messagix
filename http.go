@@ -3,9 +3,14 @@ package messagix
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
+
+	"github.com/0xzer/messagix/cookies"
+	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/types"
 )
 
@@ -35,6 +40,7 @@ type HttpQuery struct {
 	Variables            string `url:"variables,omitempty"`
 	ServerTimestamps     string `url:"server_timestamps,omitempty"` // "true" or "false"
 	DocID                string `url:"doc_id,omitempty"`
+	D					 string `url:"__d,omitempty"` // for insta
 }
 
 func (c *Client) NewHttpQuery() *HttpQuery {
@@ -62,6 +68,9 @@ func (c *Client) NewHttpQuery() *HttpQuery {
 	}
 	if siteConfig.AccountId != "0" {
 		query.Av = siteConfig.AccountId
+	}
+	if c.platform == types.Instagram {
+		query.D = "www"
 	}
 	return query
 }
@@ -100,36 +109,73 @@ func (c *Client) MakeRequest(url string, method string, headers http.Header, pay
 	return response, responseBody, nil
 }
 
-// 129477
-func (c *Client) buildHeaders() http.Header {
+func (c *Client) buildHeaders(withCookies bool) http.Header {
 
 	headers := http.Header{}
 	headers.Add("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
 	headers.Add("accept-language", "en-US,en;q=0.9")
 	headers.Add("dpr", "1.125")
 	headers.Add("sec-ch-prefers-color-scheme", "light")
-	headers.Add("sec-ch-ua", "\"Google Chrome\";v=\"113\", \"Chromium\";v=\"113\", \"Not-A.Brand\";v=\"24\"")
-	headers.Add("sec-ch-ua-full-version-list", "\"Google Chrome\";v=\"113.0.5672.92\", \"Chromium\";v=\"113.0.5672.92\", \"Not-A.Brand\";v=\"24.0.0.0\"")
+	headers.Add("sec-ch-ua", "\"Google Chrome\";v=\"116\", \"Chromium\";v=\"116\", \"Not-A.Brand\";v=\"24\"")
+	headers.Add("sec-ch-ua-full-version-list", "\"Google Chrome\";v=\"116.0.5845.140\", \"Chromium\";v=\"116.0.5845.140\", \"Not-A.Brand\";v=\"24.0.0.0\"")
 	headers.Add("sec-ch-ua-mobile", "?0")
 	headers.Add("sec-ch-ua-model", "")
 	headers.Add("sec-ch-ua-platform", "Linux")
-	headers.Add("sec-ch-ua-platform-version", "6.4.10")
+	headers.Add("sec-ch-ua-platform-version", "6.4.12")
 	headers.Add("user-agent", USER_AGENT)
 
+	if c.platform == types.Facebook {
+		c.addFacebookHeaders(&headers)
+	} else {
+		c.addInstagramHeaders(&headers)
+	}
+
+	if c.cookies != nil && withCookies {
+		cookieStr := cookies.CookiesToString(c.cookies)
+		if cookieStr != "" {
+			headers.Add("cookie", cookieStr)
+		}
+		w, _ := c.cookies.GetViewports()
+		headers.Add("viewport-width", w)
+		headers.Add("x-asbd-id", "129477")
+	}
+	return headers
+}
+
+func (c *Client) addFacebookHeaders(h *http.Header) {
 	if c.configs != nil {
 		if c.configs.siteConfig != nil {
-			headers.Add("x-asbd-id", c.configs.siteConfig.X_ASDB_ID)
-			headers.Add("x-fb-lsd", c.configs.siteConfig.LsdToken)
+			h.Add("x-fb-lsd", c.configs.siteConfig.LsdToken)
 		}
 	}
+}
 
-	if c.cookies != nil {
-		w, _ := c.cookies.GetViewports()
-		headers.Add("cookie", c.cookies.ToString())
-		headers.Add("viewport-width", w)
+func (c *Client) addInstagramHeaders(h *http.Header) {
+	if c.configs != nil {
+		csrfToken := c.cookies.GetValue("csrftoken")
+		mid := c.cookies.GetValue("mid")
+		if csrfToken != "" {
+			h.Add("x-csrftoken", csrfToken)
+		}
+
+		if mid != "" {
+			h.Add("x-mid", mid)
+		}
+
+		if c.configs.siteConfig != nil {
+			instaCookies, ok := c.cookies.(*cookies.InstagramCookies)
+			if ok {
+				if instaCookies.IgWWWClaim == "" {
+					h.Add("x-ig-www-claim", "0")
+				} else {
+					h.Add("x-ig-www-claim", instaCookies.IgWWWClaim)
+				}
+			} else {
+				h.Add("x-ig-www-claim", "0")
+			}
+		}
+		h.Add("x-ig-app-id", modules.SchedulerJSDefined.CurrentUserInitialData.AppID)
 	}
-
-	return headers
 }
 
 func (c *Client) findCookie(cookies []*http.Cookie, name string) *http.Cookie {
@@ -139,4 +185,47 @@ func (c *Client) findCookie(cookies []*http.Cookie, name string) *http.Cookie {
 		}
 	}
 	return nil
+}
+
+func (a *Account) sendLoginRequest(form url.Values, loginUrl string) (*http.Response, []byte, error) {
+    h := a.buildLoginHeaders()
+    loginPayload := []byte(form.Encode())
+    
+    resp, respBody, err := a.client.MakeRequest(loginUrl, "POST", h, loginPayload, types.FORM)
+    if err != nil {
+        return nil, nil, fmt.Errorf("failed to send login request: %e", err)
+    }
+
+    return resp, respBody, nil
+}
+
+func (a *Account) buildLoginHeaders() http.Header {
+    h := a.client.buildHeaders(true)
+    if a.client.platform == types.Facebook {
+        h = a.addFacebookHeaders(h)
+    } else {
+        h = a.addInstagramHeaders(h)
+    }
+    h.Add("origin", a.client.getEndpoint("base_url"))
+    h.Add("referer", a.client.getEndpoint("login_page"))
+
+    return h
+}
+
+func (a *Account) addFacebookHeaders(h http.Header) http.Header {
+    h.Add("sec-fetch-dest", "document")
+    h.Add("sec-fetch-mode", "navigate")
+    h.Add("sec-fetch-site", "same-origin") // header is required
+    h.Add("sec-fetch-user", "?1")
+    h.Add("upgrade-insecure-requests", "1")
+    return h
+}
+
+func (a *Account) addInstagramHeaders(h http.Header) http.Header {
+    h.Add("x-instagram-ajax", a.client.configs.siteConfig.ServerRevision)
+    h.Add("sec-fetch-dest", "empty")
+    h.Add("sec-fetch-mode", "cors")
+    h.Add("sec-fetch-site", "same-origin") // header is required
+    h.Add("x-requested-with", "XMLHttpRequest")
+    return h
 }

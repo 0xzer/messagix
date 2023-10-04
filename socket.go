@@ -9,12 +9,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/0xzer/messagix/cookies"
 	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/packets"
+	"github.com/0xzer/messagix/types"
 	"github.com/gorilla/websocket"
 )
 
 var (
+	connectionTypes = map[types.Platform]string{
+		types.Instagram: "cookie_auth",
+		types.Facebook: "websocket",
+	}
 	ErrSocketClosed      = errors.New("socket is closed")
 	ErrSocketAlreadyOpen = errors.New("socket is already open")
 )
@@ -218,7 +224,6 @@ func (s *Socket) makeLSRequest(payload []byte, t int) (uint16, error) {
 
 func (s *Socket) CloseHandler(code int, text string) error {
 	s.conn = nil
-
 	if s.client.eventHandler != nil {
 		socketCloseEvent := &Event_SocketClosed{
 			Code: code,
@@ -226,16 +231,19 @@ func (s *Socket) CloseHandler(code int, text string) error {
 		}
 		s.client.eventHandler(socketCloseEvent)
 	}
-	
 	return nil
 }
 
 func (s *Socket) getConnHeaders() http.Header {
 	h := http.Header{}
 
-	h.Add("cookie", s.client.cookies.ToString())
+	h.Add("cookie", cookies.CookiesToString(s.client.cookies))
 	h.Add("user-agent", USER_AGENT)
-	h.Add("origin", "https://www.facebook.com")
+	h.Add("origin", s.client.getEndpoint("base_url"))
 
 	return h
+}
+
+func (s *Socket) getConnectionType() string {
+	return connectionTypes[s.client.platform]
 }
