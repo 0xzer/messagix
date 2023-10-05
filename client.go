@@ -144,6 +144,12 @@ func (c *Client) Connect() error {
 	return c.socket.Connect()
 }
 
+func (c *Client) Disconnect() {
+	if c.socket.conn != nil {
+		c.socket.conn.Close()
+	}
+}
+
 func (c *Client) SaveSession(path string) error {
 	jsonBytes, err := json.Marshal(c.cookies)
 	if err != nil {
