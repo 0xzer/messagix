@@ -1,4 +1,5 @@
-package modules
+package types
+
 
 type CurrentBusinessAccount struct {
 	BusinessAccountName                              any    `json:"businessAccountName,omitempty"`

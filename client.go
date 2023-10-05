@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/0xzer/messagix/cookies"
+	"github.com/0xzer/messagix/crypto"
 	"github.com/0xzer/messagix/data/endpoints"
-	"github.com/0xzer/messagix/modules"
+	"github.com/0xzer/messagix/table"
 	"github.com/0xzer/messagix/types"
 	"github.com/google/go-querystring/query"
 	"github.com/rs/zerolog"
@@ -61,7 +63,14 @@ func NewClient(platform types.Platform, cookies cookies.Cookies, logger zerolog.
 	cli.Messages = &Messages{client: cli}
 	cli.Threads = &Threads{client: cli}
 	cli.configurePlatformClient()
-	cli.configs = &Configs{client: cli, needSync: false}
+	cli.configs = &Configs{
+		client: cli,
+		needSync: false,
+		browserConfigTable: &types.SchedulerJSDefineConfig{},
+		accountConfigTable: &table.LSTable{},
+		Bitmap: crypto.NewBitmap(),
+		CsrBitmap: crypto.NewBitmap(),
+	}
 	if proxy != "" {
 		err := cli.SetProxy(proxy)
 		if err != nil {
@@ -167,7 +176,7 @@ func (c *Client) sendCookieConsent(jsDatr string) error {
 		h.Add("host", c.getEndpoint("host"))
 		h.Add("origin", c.getEndpoint("base_url"))
 		h.Add("referer", c.getEndpoint("base_url") + "/")
-		h.Add("x-instagram-ajax", c.configs.siteConfig.ServerRevision)
+		h.Add("x-instagram-ajax", strconv.Itoa(int(c.configs.browserConfigTable.SiteData.ServerRevision)))
 		variables, err := json.Marshal(&types.InstagramCookiesVariables{
 			FirstPartyTrackingOptIn: true,
 			IgDid: c.cookies.GetValue("ig_did"),
@@ -232,9 +241,9 @@ func (c *Client) getEndpoint(name string) string {
 func (c *Client) IsAuthenticated() bool {
 	var isAuthenticated bool
 	if c.platform == types.Facebook {
-		isAuthenticated = modules.SchedulerJSDefined.CurrentUserInitialData.AccountID != "0"
+		isAuthenticated = c.configs.browserConfigTable.CurrentUserInitialData.AccountID != "0"
 	} else {
-		isAuthenticated = modules.SchedulerJSDefined.XIGSharedData.Native.Config.ViewerID != ""
+		isAuthenticated = c.configs.browserConfigTable.XIGSharedData.Native.Config.ViewerID != ""
 	}
 	return isAuthenticated
 }

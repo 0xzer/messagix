@@ -9,7 +9,6 @@ import (
 	"net/textproto"
 	"reflect"
 	"github.com/0xzer/messagix/methods"
-	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/types"
 	"github.com/google/go-querystring/query"
 )
@@ -88,11 +87,11 @@ func (c *Client) parseMetadata(response *types.MercuryUploadResponse) error {
 	switch metadata := response.Payload.Metadata.(type) {
 	case []interface{}:
 		var realMetadata types.ImageMetadata
-		err = modules.InterfaceToStructJSON(metadata[0], &realMetadata)
+		err = methods.InterfaceToStructJSON(metadata[0], &realMetadata)
 		response.Payload.Metadata = &realMetadata
 	case map[string]interface{}:
 		var realMetadata types.VideoMetadata
-		err = modules.InterfaceToStructJSON(metadata["0"], &realMetadata)
+		err = methods.InterfaceToStructJSON(metadata["0"], &realMetadata)
 		response.Payload.Metadata = &realMetadata
 	default:
 		return fmt.Errorf("got invalid metadata type, cannot proceed with type assertion: %v", reflect.TypeOf(metadata))

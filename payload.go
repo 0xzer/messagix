@@ -24,11 +24,11 @@ func (cp *ConnectPayload) Write() ([]byte, error) {
 
 func (c *Client) NewConnectRequest(jsonData string, connectFlags uint8) ([]byte, error) {
 	payload := &ConnectPayload{
-		ProtocolName: c.configs.mqttConfig.ProtocolName,
-		ProtocolLevel: c.configs.mqttConfig.ProtocolLevel,
+		ProtocolName: protocolName,
+		ProtocolLevel: uint8(protocolLevel),
 		ConnectFlags: connectFlags,
-		KeepAliveTime: c.configs.mqttConfig.KeepAliveTimeout,
-		ClientId: c.configs.mqttConfig.ClientId,
+		KeepAliveTime: uint16(keepAliveTimeout),
+		ClientId: protocolClientId,
 		JSONData: jsonData,
 	}
 

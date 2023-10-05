@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/0xzer/messagix/cookies"
-	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/types"
 )
 
@@ -45,29 +44,30 @@ type HttpQuery struct {
 
 func (c *Client) NewHttpQuery() *HttpQuery {
 	c.graphQLRequests++
-	siteConfig := c.configs.siteConfig
+	siteConfig := c.configs.browserConfigTable.SiteData
+	dpr := strconv.FormatFloat(siteConfig.Pr, 'g', 4, 64)
 	query := &HttpQuery{
-		User: siteConfig.AccountId,
+		User: c.configs.browserConfigTable.CurrentUserInitialData.UserID,
 		A: "1",
 		Req: strconv.Itoa(c.graphQLRequests),
 		Hs: siteConfig.HasteSession,
-		Dpr: siteConfig.Pr,
-		Ccg: siteConfig.ConnectionClass,
-		Rev: siteConfig.SpinR,
-		S: siteConfig.WebSessionId,
-		Hsi: siteConfig.HasteSessionId,
-		Dyn: siteConfig.Bitmap.CompressedStr,
-		Csr: siteConfig.CSRBitmap.CompressedStr,
-		CometReq: siteConfig.CometReq,
-		FbDtsg: siteConfig.FbDtsg,
-		Jazoest: siteConfig.Jazoest,
-		Lsd: siteConfig.LsdToken,
-		SpinR: siteConfig.SpinR,
+		Dpr: dpr,
+		Ccg: c.configs.browserConfigTable.WebConnectionClassServerGuess.ConnectionClass,
+		Rev: strconv.Itoa(siteConfig.SpinR),
+		S: c.configs.WebSessionId,
+		Hsi: siteConfig.Hsi,
+		Dyn: c.configs.Bitmap.CompressedStr,
+		Csr: c.configs.CsrBitmap.CompressedStr,
+		CometReq: c.configs.CometReq,
+		FbDtsg: c.configs.browserConfigTable.DTSGInitData.Token,
+		Jazoest: c.configs.Jazoest,
+		Lsd: c.configs.LsdToken,
+		SpinR: strconv.Itoa(siteConfig.SpinR),
 		SpinB: siteConfig.SpinB,
-		SpinT: siteConfig.SpinT,
+		SpinT: strconv.Itoa(siteConfig.SpinT),
 	}
-	if siteConfig.AccountId != "0" {
-		query.Av = siteConfig.AccountId
+	if c.configs.browserConfigTable.CurrentUserInitialData.UserID != "0" {
+		query.Av = c.configs.browserConfigTable.CurrentUserInitialData.UserID
 	}
 	if c.platform == types.Instagram {
 		query.D = "www"
@@ -144,8 +144,8 @@ func (c *Client) buildHeaders(withCookies bool) http.Header {
 
 func (c *Client) addFacebookHeaders(h *http.Header) {
 	if c.configs != nil {
-		if c.configs.siteConfig != nil {
-			h.Add("x-fb-lsd", c.configs.siteConfig.LsdToken)
+		if c.configs.LsdToken != "" {
+			h.Add("x-fb-lsd", c.configs.LsdToken)
 		}
 	}
 }
@@ -162,7 +162,7 @@ func (c *Client) addInstagramHeaders(h *http.Header) {
 			h.Add("x-mid", mid)
 		}
 
-		if c.configs.siteConfig != nil {
+		if c.configs.browserConfigTable != nil {
 			instaCookies, ok := c.cookies.(*cookies.InstagramCookies)
 			if ok {
 				if instaCookies.IgWWWClaim == "" {
@@ -174,7 +174,7 @@ func (c *Client) addInstagramHeaders(h *http.Header) {
 				h.Add("x-ig-www-claim", "0")
 			}
 		}
-		h.Add("x-ig-app-id", modules.SchedulerJSDefined.CurrentUserInitialData.AppID)
+		h.Add("x-ig-app-id", c.configs.browserConfigTable.CurrentUserInitialData.AppID)
 	}
 }
 
@@ -222,7 +222,7 @@ func (a *Account) addFacebookHeaders(h http.Header) http.Header {
 }
 
 func (a *Account) addInstagramHeaders(h http.Header) http.Header {
-    h.Add("x-instagram-ajax", a.client.configs.siteConfig.ServerRevision)
+    h.Add("x-instagram-ajax", strconv.Itoa(int(a.client.configs.browserConfigTable.SiteData.ServerRevision)))
     h.Add("sec-fetch-dest", "empty")
     h.Add("sec-fetch-mode", "cors")
     h.Add("sec-fetch-site", "same-origin") // header is required

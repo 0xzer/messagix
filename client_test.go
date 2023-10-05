@@ -13,11 +13,15 @@ import (
 
 var cli *messagix.Client
 func TestClient(t *testing.T) {
-	session, _ := cookies.NewCookiesFromFile("session.json", types.Instagram)
+	session, err := cookies.NewCookiesFromFile("test_files/session.json", types.Instagram)
+	if err != nil {
+		log.Fatalf("failed to create insta cookies: %e", err)
+	}
+
 	cli = messagix.NewClient(types.Instagram, session, debug.NewLogger(), "")
 	cli.SetEventHandler(evHandler)
 
-	err := cli.Connect()
+	err = cli.Connect()
 	if err != nil {
 		log.Fatalf("failed to connect to socket: %e", err)
 	}
@@ -39,8 +43,6 @@ func evHandler(evt interface{}) {
 			Any("total_contacts", len(evtData.Contacts)).
 			Any("platform", cli.CurrentPlatform()).
 			Msg("Client is ready!")
-
-			sendReaction()
 		case *messagix.Event_PublishResponse:
 			cli.Logger.Info().Any("tableData", evtData.Table).Msg("Received new event from socket")
 		case *messagix.Event_Error:

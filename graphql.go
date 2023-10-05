@@ -57,7 +57,7 @@ func (c *Client) makeLSRequest(variables *graphql.LSPlatformGraphQLLightspeedVar
 	}
 	
 	lsVariables := &graphql.LSPlatformGraphQLLightspeedRequestPayload{
-		DeviceID: c.configs.mqttConfig.Cid,
+		DeviceID: c.configs.browserConfigTable.MqttWebDeviceID.ClientID,
 		IncludeChatVisibility: false,
 		RequestID: c.lsRequests,
 		RequestPayload: string(strPayload),

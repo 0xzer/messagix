@@ -1,121 +1,50 @@
-package modules
+package messagix
 
 import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/0xzer/messagix/graphql"
 	"github.com/0xzer/messagix/lightspeed"
+	"github.com/0xzer/messagix/methods"
+	"github.com/0xzer/messagix/types"
 )
+
 
 var GraphQLData = &graphql.GraphQLTable{}
 var VersionId int64
 
-type EnvJSON struct {
-	UseTrustedTypes          bool   `json:"useTrustedTypes,omitempty"`
-	IsTrustedTypesReportOnly bool   `json:"isTrustedTypesReportOnly,omitempty"`
-	RoutingNamespace         string `json:"routing_namespace,omitempty"`
-	Ghlss                    string `json:"ghlss,omitempty"`
-	ScheduledCSSJSScheduler  bool   `json:"scheduledCSSJSScheduler,omitempty"`
-	UseFbtVirtualModules     bool   `json:"use_fbt_virtual_modules,omitempty"`
-	CompatIframeToken        string `json:"compat_iframe_token,omitempty"`
-}
-
-type Eqmc struct {
-	AjaxURL string `json:"u,omitempty"`
-	HasteSessionId string `json:"e,omitempty"`
-	S string `json:"s,omitempty"`
-	W int    `json:"w,omitempty"`
-	FbDtsg string `json:"f,omitempty"`
-	L any    `json:"l,omitempty"`
-}
-
-type AjaxQueryParams struct {
-	A        string `json:"__a"`
-	User     string `json:"__user"`
-	CometReq string `json:"__comet_req"`
-	Jazoest  string `json:"jazoest"`
-}
-
-func (e *Eqmc) ParseAjaxURLData() (*AjaxQueryParams, error) {
-	u, err := url.Parse(e.AjaxURL)
-	if err != nil {
-		return nil, err
-	}
-
-	params, err := url.ParseQuery(u.RawQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	var result AjaxQueryParams
-
-	result.A = params.Get("__a")
-	result.User = params.Get("__user")
-	result.CometReq = params.Get("__comet_req")
-	result.Jazoest = params.Get("jazoest")
-	return &result, nil
-}
-
-type JSON struct {
-	Eqmc Eqmc
-	EnvJSON EnvJSON
-}
-
-var JSONData = JSON{}
-
-func HandleJSON(data []byte, id string) error {
+func (m *ModuleParser) HandleRawJSON(data []byte, id string) error {
 	var err error
 	switch id {
 	case "envjson":
-		var d EnvJSON
+		var d types.EnvJSON
 		err = json.Unmarshal(data, &d)
-		JSONData.EnvJSON = d
-	case "__eqmc":
-		var d Eqmc
-		err = json.Unmarshal(data, &d)
-		JSONData.Eqmc = d
-	}
-	return err
-}
-
-var CsrBitmap = make([]int, 0)
-var Bitmap = make([]int, 0)
-
-func InterfaceToStructJSON(data interface{}, i interface{}) error {
-	b, err := json.Marshal(&data)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(b, &i)
-}
-
-func handleDefine(modName string, data []interface{}) error {
-	reflectedMs := reflect.ValueOf(&SchedulerJSDefined).Elem()
-	switch modName {
-		case "ssjs":
-			for _, child := range data {
-				configData := child.([]interface{})
-				err := handleConfigData(configData, reflectedMs)
-				if err != nil {
-					return err
-				}
-			}
-		case "default_define":
-			err := handleConfigData(data, reflectedMs)
-			if err != nil {
-				return err
-			}
+		if err != nil {
+			return fmt.Errorf("failed to parse data from types.EnvJSON: %e", err)
 		}
-		return nil
+	case "__eqmc":
+		var d types.Eqmc
+		err = json.Unmarshal(data, &d)
+		if err != nil {
+			return fmt.Errorf("failed to parse data from types.Eqmc: %e", err)
+		}
+		ajaxData, err := d.ParseAjaxURLData()
+		if err != nil {
+			return fmt.Errorf("failed to parse ajax url data from types.Eqmc: %e", err)
+		}
+		m.client.configs.Jazoest = ajaxData.Jazoest
+		m.client.configs.CometReq = ajaxData.CometReq
+	}
+	return nil
 }
 
-func handleConfigData(configData []interface{}, reflectedMs reflect.Value) error {
+
+func (m *ModuleParser) handleConfigData(configData []interface{}, reflectedMs reflect.Value) error {
 	if len(configData) < 4 {
 		return nil
 	}
@@ -128,7 +57,7 @@ func handleConfigData(configData []interface{}, reflectedMs reflect.Value) error
 		return nil
 	}
 
-	Bitmap = append(Bitmap, configId)
+	m.client.configs.Bitmap.BMap = append(m.client.configs.Bitmap.BMap, configId)
 	field := reflectedMs.FieldByName(configName)
 	if !field.IsValid() {
 		//fmt.Printf("Invalid field name: %s\n", configName)
@@ -139,7 +68,7 @@ func handleConfigData(configData []interface{}, reflectedMs reflect.Value) error
 		return nil
 	}
 
-	err := InterfaceToStructJSON(config, field.Addr().Interface())
+	err := methods.InterfaceToStructJSON(config, field.Addr().Interface())
 	if err != nil {
 		return err
 	}
@@ -147,7 +76,7 @@ func handleConfigData(configData []interface{}, reflectedMs reflect.Value) error
 	return nil
 }
 
-func handleRequire(modName string, data []interface{}) error {
+func (m *ModuleParser) handleRequire(modName string, data []interface{}) error {
 	switch modName {
 		case "ssjs":
 			//reflectedMs := reflect.ValueOf(&SchedulerJSRequired).Elem()
@@ -164,7 +93,7 @@ func handleRequire(modName string, data []interface{}) error {
 							}
 							for _, req := range requestsMap {
 								var reqData *graphql.GraphQLPreloader
-								err := InterfaceToStructJSON(req, &reqData)
+								err := methods.InterfaceToStructJSON(req, &reqData)
 								if err != nil {
 									continue
 								}
@@ -183,7 +112,7 @@ func handleRequire(modName string, data []interface{}) error {
 						moduleData := d[3].([]interface{})
 						//method := d[1].(string)
 						//dependencies := d[2].(string)
-						parserFunc := parseGraphMethodName(moduleData[0].(string))
+						parserFunc := m.parseGraphMethodName(moduleData[0].(string))
 						graphQLData := moduleData[1].(map[string]interface{})
 						boxData, ok := graphQLData["__bbox"].(map[string]interface{})
 						if !ok {
@@ -196,9 +125,9 @@ func handleRequire(modName string, data []interface{}) error {
 						}
 
 						if parserFunc == "LSPlatformGraphQLLightspeedRequestQuery" || parserFunc == "LSPlatformGraphQLLightspeedRequestForIGDQuery" {
-							handleLightSpeedQLRequest(result, parserFunc)
+							m.handleLightSpeedQLRequest(result, parserFunc)
 						} else {
-							handleGraphQLData(parserFunc, result)
+							m.handleGraphQLData(parserFunc, result)
 						}
 				}
 			}
@@ -206,13 +135,13 @@ func handleRequire(modName string, data []interface{}) error {
 	return nil
 }
 
-func handleLightSpeedQLRequest(data interface{}, parserFunc string) {
+func (m *ModuleParser) handleLightSpeedQLRequest(data interface{}, parserFunc string) {
 	var lsPayloadStr string
 	var deps interface{}
 	switch parserFunc {
 	case "LSPlatformGraphQLLightspeedRequestForIGDQuery":
 		var lsData *graphql.LSPlatformGraphQLLightspeedRequestForIGDQuery
-		err := InterfaceToStructJSON(&data, &lsData)
+		err := methods.InterfaceToStructJSON(&data, &lsData)
 		if err != nil {
 			log.Fatalf("failed to parse LightSpeedQLRequest data from html (INSTAGRAM): %e", err)
 		}
@@ -220,7 +149,7 @@ func handleLightSpeedQLRequest(data interface{}, parserFunc string) {
 		deps = lsData.Data.LightspeedWebRequestForIgd.Dependencies
 	case "LSPlatformGraphQLLightspeedRequestQuery":
 		var lsData *graphql.LSPlatformGraphQLLightspeedRequestQuery
-		err := InterfaceToStructJSON(&data, &lsData)
+		err := methods.InterfaceToStructJSON(&data, &lsData)
 		if err != nil {
 			log.Fatalf("failed to parse LightSpeedQLRequest data from html (FACEBOOK): %e", err)
 		}
@@ -233,7 +162,7 @@ func handleLightSpeedQLRequest(data interface{}, parserFunc string) {
 	}
 
 	dependencies := lightspeed.DependenciesToMap(deps)
-	decoder := lightspeed.NewLightSpeedDecoder(dependencies, SchedulerJSRequired.LSTable)
+	decoder := lightspeed.NewLightSpeedDecoder(dependencies, m.client.configs.accountConfigTable)
 	
 	var payload lightspeed.LightSpeedData
 	err := json.Unmarshal([]byte(lsPayloadStr), &payload)
@@ -244,7 +173,7 @@ func handleLightSpeedQLRequest(data interface{}, parserFunc string) {
 	decoder.Decode(payload.Steps)
 }
 
-func handleGraphQLData(name string, data interface{}) {
+func (m *ModuleParser) handleGraphQLData(name string, data interface{}) {
 	reflectedMs := reflect.ValueOf(GraphQLData).Elem()
 	dataField := reflectedMs.FieldByName(name)
 	if !dataField.IsValid() {
@@ -271,9 +200,103 @@ func handleGraphQLData(name string, data interface{}) {
 	dataField.Set(newSlice)
 }
 
-func parseGraphMethodName(name string) string {
+func (m *ModuleParser) parseGraphMethodName(name string) string {
 	var s string
 	s = strings.Replace(name, "adp_", "", -1)
 	s = strings.Split(s, "RelayPreloader_")[0]
 	return s
+}
+
+func (m *ModuleParser) SSJSHandle(data interface{}) error {
+	var err error
+	box, ok := data.(map[string]interface{})
+	if !ok {
+		interfaceData, ok := data.([]interface{})
+		if ok {
+			err = m.handleDefine("default_define", interfaceData)
+			return err
+		}
+		log.Fatalf("failed to convert ssjs data to map[string]interface{}")
+	}
+
+	for k, v := range box {
+		if v == nil {
+			continue
+		}
+		switch k {
+			case "__bbox":
+				boxMap := v.(map[string]interface{})
+				for boxKey, boxData := range boxMap {
+					boxDataArr := boxData.([]interface{})
+					switch boxKey {
+					case "require":
+						err = m.handleRequire("ssjs", boxDataArr)
+						continue
+					case "define":
+						err = m.handleDefine("ssjs", boxDataArr)
+					}
+				}
+		}
+	}
+	return err
+}
+
+func (m *ModuleParser) handleDefine(modName string, data []interface{}) error {
+	reflectedMs := reflect.ValueOf(m.client.configs.browserConfigTable).Elem()
+	switch modName {
+		case "ssjs":
+			for _, child := range data {
+				configData := child.([]interface{})
+				err := m.handleConfigData(configData, reflectedMs)
+				if err != nil {
+					return err
+				}
+			}
+		case "default_define":
+			err := m.handleConfigData(data, reflectedMs)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+}
+
+func (m *ModuleParser) Bootloader_HandlePayload(payload interface{}, bootloaderConfig *types.BootLoaderConfig) error {
+	var data *types.Bootloader_HandlePayload
+	err := methods.InterfaceToStructJSON(&payload, &data)
+	if err != nil {
+		return err
+	}
+
+	if data.CsrUpgrade != "" {
+		m.client.configs.CsrBitmap.BMap = append(m.client.configs.CsrBitmap.BMap, m.parseCSRBit(data.CsrUpgrade)...)
+	}
+
+	if len(data.RsrcMap) > 0 {
+		for _, v := range data.RsrcMap {
+			shouldAdd := (bootloaderConfig.PhdOn && v.C == 2) || (!bootloaderConfig.PhdOn && v.C != 0)
+			if shouldAdd {
+				m.client.configs.CsrBitmap.BMap = append(m.client.configs.CsrBitmap.BMap, m.parseCSRBit(v.P)...)
+			}
+		}
+	}
+
+	return nil
+}
+
+// s always start with :
+func (m *ModuleParser) parseCSRBit(s string) []int {
+	bits := make([]int, 0)
+	splitUp := strings.Split(s[1:], ",")
+	for _, b := range splitUp {
+		conv, err := strconv.ParseInt(b, 10, 32)
+		if err != nil {
+			log.Fatalf("failed to parse csrbit: %e", err)
+		}
+		if conv == 0 {
+			continue
+		}
+		bits = append(bits, int(conv))
+	}
+	return bits
 }

@@ -12,7 +12,6 @@ import (
 
 	"github.com/0xzer/messagix/cookies"
 	"github.com/0xzer/messagix/methods"
-	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/types"
 	"golang.org/x/net/html"
 )
@@ -103,7 +102,7 @@ func (m *ModuleParser) Load(page string) {
 		id := tag.Attributes["id"]
 		switch id {
 		case "envjson", "__eqmc":
-			modules.HandleJSON([]byte(tag.Content), id)
+			m.HandleRawJSON([]byte(tag.Content), id)
 		default:
 			if tag.Content == "" {
 				continue
@@ -130,7 +129,7 @@ func (m *ModuleParser) Load(page string) {
 	authenticated := m.client.IsAuthenticated()
 	// on certain occasions, the server does not return the lightspeed data or version
 	// when this is the case, the server "preloads" the js files in the link tags, so we need to loop through them until we can find the "LSVersion" module and extract the exported version string
-	if modules.VersionId == 0  && authenticated {
+	if m.client.configs.VersionId == 0  && authenticated {
 		m.client.configs.needSync = true
 		m.client.Logger.Info().Msg("Setting configs.needSync to true")
 		var doneCrawling bool
@@ -153,7 +152,7 @@ func (m *ModuleParser) Load(page string) {
 	}
 
 	if m.client.platform == types.Instagram {
-		sharedData := modules.SchedulerJSDefined.XIGSharedData
+		sharedData := m.client.configs.browserConfigTable.XIGSharedData
 		err = sharedData.ParseRaw()
 		if err != nil {
 			log.Fatalf("failed to parse XIGSharedData raw string into *types.XIGConfigData: %e", err)
@@ -207,7 +206,7 @@ func (m *ModuleParser) requireLazyModule(data string) {
 			}
 
 			for _, d := range bigPipeData.JSMods.Define {
-				err := modules.SSJSHandle(d)
+				err := m.SSJSHandle(d)
 				if err != nil {
 					log.Fatalf("failed to handle serverjs module: %e", err)
 				}
@@ -228,7 +227,7 @@ func (m *ModuleParser) requireLazyModule(data string) {
 			}
 
 			for _, d := range moduleData.Define {
-				err := modules.SSJSHandle(d)
+				err := m.SSJSHandle(d)
 				if err != nil {
 					log.Fatalf("failed to handle serverjs module: %e", err)
 				}
@@ -247,7 +246,7 @@ func (m *ModuleParser) requireLazyModule(data string) {
 				log.Fatalf("failed to unmarshal handleData[0] into struct *ModuleData")
 			}
 			for _, d := range moduleData.Define {
-				err := modules.SSJSHandle(d)
+				err := m.SSJSHandle(d)
 				if err != nil {
 					log.Fatalf("failed to handle hastesupportdata module: %e", err)
 				}
@@ -277,7 +276,7 @@ func (m *ModuleParser) crawlJavascriptFile(href string) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		modules.VersionId = versionInt
+		m.client.configs.VersionId = versionInt
 		return true, nil
 	}
 	return false, nil
@@ -292,7 +291,7 @@ func (m *ModuleParser) handleModule(data []interface{}) {
 			for _, d := range modData {
 				switch method {
 				case "handle":
-					err := modules.SSJSHandle(d)
+					err := m.SSJSHandle(d)
 					if err != nil {
 						log.Fatalf("failed to handle scheduledserverjs module: %e", err)
 					}
@@ -303,7 +302,7 @@ func (m *ModuleParser) handleModule(data []interface{}) {
 			for _, d := range modData {
 				switch method {
 					case "handlePayload":
-						err := modules.HandlePayload(d, &modules.SchedulerJSDefined.BootloaderConfig)
+						err := m.Bootloader_HandlePayload(d, &m.client.configs.browserConfigTable.BootloaderConfig)
 						if err != nil {
 							log.Fatalf("failed to handle Bootloader_handlePayload call: %e", err)
 						}

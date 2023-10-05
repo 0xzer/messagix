@@ -1,6 +1,23 @@
 package types
 
-type HandlePayload struct {
+type BootLoaderConfig struct {
+	BtCutoffIndex              int   `json:"btCutoffIndex,omitempty"`
+	DeferBootloads             bool  `json:"deferBootloads,omitempty"`
+	EarlyRequireLazy           bool  `json:"earlyRequireLazy,omitempty"`
+	FastPathForAlreadyRequired bool  `json:"fastPathForAlreadyRequired,omitempty"`
+	HypStep4                   bool  `json:"hypStep4,omitempty"`
+	JsRetries                  []int `json:"jsRetries,omitempty"`
+	JsRetryAbortNum            int   `json:"jsRetryAbortNum,omitempty"`
+	JsRetryAbortTime           int   `json:"jsRetryAbortTime,omitempty"`
+	PhdOn                      bool  `json:"phdOn,omitempty"`
+	SilentDups                 bool  `json:"silentDups,omitempty"`
+	Timeout                    int   `json:"timeout,omitempty"`
+	TranslationRetries         []int `json:"translationRetries,omitempty"`
+	TranslationRetryAbortNum   int   `json:"translationRetryAbortNum,omitempty"`
+	TranslationRetryAbortTime  int   `json:"translationRetryAbortTime,omitempty"`
+}
+
+type Bootloader_HandlePayload struct {
 	Consistency Consistency            `json:"consistency,omitempty"`
 	RsrcMap     map[string]RsrcDetails `json:"rsrcMap,omitempty"`
 	CsrUpgrade  string                 `json:"csrUpgrade,omitempty"`

@@ -25,10 +25,10 @@ type LSUpsertMessage struct {
     SendStatusV2 int64 `index:"16"`
     IsUnsent bool `index:"17"`
     UnsentTimestampMs int64 `index:"18"`
-    MentionOffsets int64 `index:"19"`
-    MentionLengths int64 `index:"20"`
-    MentionIds int64 `index:"21"`
-    MentionTypes int64 `index:"22"`
+    MentionOffsets string `index:"19"`
+    MentionLengths string `index:"20"`
+    MentionIds string `index:"21"`
+    MentionTypes string `index:"22"`
     ReplySourceId string `index:"23"`
     ReplySourceType int64 `index:"24"`
     ReplySourceTypeV2 int64 `index:"25"`

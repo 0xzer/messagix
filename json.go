@@ -3,8 +3,6 @@ package messagix
 import (
 	"encoding/json"
 	"strconv"
-
-	"github.com/0xzer/messagix/modules"
 )
 
 type Connect struct {
@@ -32,26 +30,26 @@ type Connect struct {
 
 func (s *Socket) newConnectJSON() (string, error) {
 	payload := &Connect{
-		AccountId: modules.SchedulerJSDefined.CurrentUserInitialData.AccountID,
-		SessionId: s.client.configs.mqttConfig.SessionId,
-		ClientCapabilities: s.client.configs.mqttConfig.ClientCapabilities,
-		Capabilities: s.client.configs.mqttConfig.Capabilities,
-		ChatOn: s.client.configs.mqttConfig.ChatOn,
+		AccountId: s.client.configs.browserConfigTable.CurrentUserInitialData.AccountID,
+		SessionId: s.client.socket.sessionId,
+		ClientCapabilities: s.client.configs.browserConfigTable.MqttWebConfig.Capabilities,
+		Capabilities: s.client.configs.browserConfigTable.MqttWebConfig.Capabilities,
+		ChatOn: s.client.configs.browserConfigTable.MqttWebConfig.ChatVisibility,
 		Fg: false,
-		ConnectionType: s.client.configs.mqttConfig.ConnectionType,
+		ConnectionType: s.client.socket.getConnectionType(),
 		MqttSid: "",
-		AppId: s.client.configs.mqttConfig.AppId,
-		SubscribedTopics: s.client.configs.mqttConfig.SubscribedTopics,
+		AppId: s.client.configs.browserConfigTable.MessengerWebInitData.AppID,
+		SubscribedTopics: s.client.configs.browserConfigTable.MqttWebConfig.SubscribedTopics,
 		Pm: make([]any, 0),
 		Dc: "",
 		NoAutoFg: true,
 		Gas: nil,
 		Pack: make([]any, 0),
-		HostNameOverride: s.client.configs.mqttConfig.HostNameOverride,
+		HostNameOverride: s.client.configs.browserConfigTable.MqttWebConfig.HostNameOverride,
 		P: nil,
 		UserAgent: USER_AGENT,
 		Aids: nil,
-		Cid: s.client.configs.mqttConfig.ClientId,
+		Cid: s.client.configs.browserConfigTable.MqttWebDeviceID.ClientID,
 	}
 	
 	jsonData, err := json.Marshal(payload)

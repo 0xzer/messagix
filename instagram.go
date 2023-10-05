@@ -9,7 +9,6 @@ import (
 	"github.com/0xzer/messagix/cookies"
 	"github.com/0xzer/messagix/crypto"
 	"github.com/0xzer/messagix/data/responses"
-	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/types"
 	"github.com/google/go-querystring/query"
 )
@@ -51,12 +50,12 @@ func (ig *InstagramMethods) Login(identifier, password string) (cookies.Cookies,
 
 	cookies.UpdateFromResponse(ig.client.cookies, req.Header)
 
-	err = json.Unmarshal(respBody, &modules.SchedulerJSDefined.XIGSharedData.ConfigData)
+	err = json.Unmarshal(respBody, &ig.client.configs.browserConfigTable.XIGSharedData.ConfigData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal web_shared_data_v1 resp body into *XIGSharedData.ConfigData: %e", err)
 	}
 
-	encryptionConfig := modules.SchedulerJSDefined.XIGSharedData.ConfigData.Encryption
+	encryptionConfig := ig.client.configs.browserConfigTable.XIGSharedData.ConfigData.Encryption
 	pubKeyId, err := strconv.Atoi(encryptionConfig.KeyID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert keyId for instagram password encryption to int: %e", err)

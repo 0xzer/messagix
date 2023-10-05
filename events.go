@@ -3,11 +3,12 @@ package messagix
 import (
 	"encoding/json"
 	"log"
+
 	"github.com/0xzer/messagix/lightspeed"
-	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/packets"
 	"github.com/0xzer/messagix/socket"
 	"github.com/0xzer/messagix/table"
+	"github.com/0xzer/messagix/types"
 )
 
 func (s *Socket) handleBinaryMessage(data []byte) {
@@ -38,7 +39,7 @@ func (s *Socket) handleBinaryMessage(data []byte) {
 }
 
 func (s *Socket) handleReadyEvent(data *Event_Ready) {
-	appSettingPublishJSON, err := s.newAppSettingsPublishJSON(s.client.configs.siteConfig.VersionId)
+	appSettingPublishJSON, err := s.newAppSettingsPublishJSON(s.client.configs.VersionId)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -111,6 +112,7 @@ func (s *Socket) handleReadyEvent(data *Event_Ready) {
 		log.Fatalf("EnsureSyncedSocket failed to sync db 1: %e", err)
 	}
 
+	data.client = s.client
 	s.client.eventHandler(data.Finish())
 	go s.startHandshakeInterval()
 }
@@ -159,9 +161,10 @@ func (e *Event_PingResp) Finish() ResponseData {return e}
 //
 // The library provides the raw parsed data, so handle connection codes as needed for your application.
 type Event_Ready struct {
+	client *Client
 	IsNewSession   bool
 	ConnectionCode ConnectionCode
-	CurrentUser modules.CurrentUserInitialData `skip:"1"`
+	CurrentUser types.CurrentUserInitialData `skip:"1"`
 	Threads []table.LSDeleteThenInsertThread `skip:"1"`
 	Messages []table.LSUpsertMessage `skip:"1"`
 	Contacts []table.LSVerifyContactRowExists `skip:"1"`
@@ -171,10 +174,10 @@ func (pb *Event_Ready) SetIdentifier(identifier int16) {}
 
 
 func (e *Event_Ready) Finish() ResponseData {
-	e.CurrentUser = modules.SchedulerJSDefined.CurrentUserInitialData
-	e.Threads = modules.SchedulerJSRequired.LSTable.LSDeleteThenInsertThread
-	e.Messages = modules.SchedulerJSRequired.LSTable.LSUpsertMessage
-	e.Contacts = modules.SchedulerJSRequired.LSTable.LSVerifyContactRowExists
+	e.CurrentUser = e.client.configs.browserConfigTable.CurrentUserInitialData
+	e.Threads = e.client.configs.accountConfigTable.LSDeleteThenInsertThread
+	e.Messages = e.client.configs.accountConfigTable.LSUpsertMessage
+	e.Contacts = e.client.configs.accountConfigTable.LSVerifyContactRowExists
 	return e
 }
 

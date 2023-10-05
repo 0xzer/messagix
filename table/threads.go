@@ -299,3 +299,111 @@ type LSUpdateParentFolderReadWatermark struct {
     ThreadKey int64 `index:"0"`
     // ShouldUpdate bool `index:"1"` // condition ?
 }
+
+type LSUpdateOrInsertThread struct {
+    LastActivityTimestampMs int64 `index:"0"`
+    LastReadWatermarkTimestampMs int64 `index:"1"`
+    Snippet string `index:"2"`
+    ThreadName string `index:"3"`
+    ThreadPictureUrl string `index:"4"`
+    NeedsAdminApprovalForNewParticipant bool `index:"5"`
+    AuthorityLevel int64 `index:"6"`
+    ThreadKey int64 `index:"7"`
+    MailboxType int64 `index:"8"`
+    ThreadType int64 `index:"9"`
+    FolderName string `index:"10"`
+    ThreadPictureUrlFallback string `index:"11"`
+    ThreadPictureUrlExpirationTimestampMs int64 `index:"12"`
+    RemoveWatermarkTimestampMs int64 `index:"13"`
+    MuteExpireTimeMs int64 `index:"14"`
+    MuteMentionExpireTimeMs int64 `index:"15"`
+    MuteCallsExpireTimeMs int64 `index:"16"`
+    GroupNotificationSettings int64 `index:"19"`
+    IsAdminSnippet bool `index:"20"`
+    SnippetSenderContactId int64 `index:"21"`
+    SnippetStringHash int64 `index:"24"`
+    SnippetStringArgument1 int64 `index:"25"`
+    SnippetAttribution int64 `index:"26"`
+    SnippetAttributionStringHash int64 `index:"27"`
+    DisappearingSettingTtl int64 `index:"28"`
+    DisappearingSettingUpdatedTs int64 `index:"29"`
+    DisappearingSettingUpdatedBy int64 `index:"30"`
+    OngoingCallState int64 `index:"32"`
+    CannotReplyReason int64 `index:"33"`
+    CustomEmoji int64 `index:"34"`
+    CustomEmojiImageUrl int64 `index:"35"`
+    OutgoingBubbleColor int64 `index:"36"`
+    ThemeFbid int64 `index:"37"`
+    ParentThreadKey int64 `index:"38"`
+    NullstateDescriptionText1 int64 `index:"39"`
+    NullstateDescriptionType1 int64 `index:"40"`
+    NullstateDescriptionText2 int64 `index:"41"`
+    NullstateDescriptionType2 int64 `index:"42"`
+    NullstateDescriptionText3 int64 `index:"43"`
+    NullstateDescriptionType3 int64 `index:"44"`
+    SnippetHasEmoji bool `index:"45"`
+    HasPersistentMenu bool `index:"46"`
+    DisableComposerInput bool `index:"47"`
+    CannotUnsendReason int64 `index:"48"`
+    ViewedPluginKey int64 `index:"49"`
+    ViewedPluginContext int64 `index:"50"`
+    ClientThreadKey int64 `index:"51"`
+    Capabilities int64 `index:"52"`
+    ShouldRoundThreadPicture int64 `index:"53"`
+    ProactiveWarningDismissTime int64 `index:"54"`
+    IsCustomThreadPicture bool `index:"55"`
+    OtidOfFirstMessage int64 `index:"56"`
+    NormalizedSearchTerms string `index:"57"`
+    AdditionalThreadContext int64 `index:"58"`
+    DisappearingThreadKey int64 `index:"59"`
+    IsDisappearingMode bool `index:"60"`
+    DisappearingModeInitiator int64 `index:"61"`
+    UnreadDisappearingMessageCount int64 `index:"62"`
+    LastMessageCtaId int64 `index:"64"`
+    LastMessageCtaType int64 `index:"65"`
+    LastMessageCtaTimestampMs int64 `index:"66"`
+    ConsistentThreadFbid int64 `index:"67"`
+    ThreadDescription int64 `index:"69"`
+    UnsendLimitMs int64 `index:"70"`
+    Capabilities2 int64 `index:"78"`
+    Capabilities3 int64 `index:"79"`
+    SyncGroup int64 `index:"82"`
+    ThreadInvitesEnabled int64 `index:"83"`
+    ThreadInviteLink string `index:"84"`
+    IsAllUnreadMessageMissedCallXma bool `index:"85"`
+    NumUnreadSubthreads int64 `index:"86"`
+    SubthreadCount int64 `index:"87"`
+    LastNonMissedCallXmaMessageTimestampMs int64 `index:"88"`
+    ThreadInvitesEnabledV2 int64 `index:"90"`
+    HasPendingInvitation int64 `index:"93"`
+    EventStartTimestampMs int64 `index:"94"`
+    EventEndTimestampMs int64 `index:"95"`
+    TakedownState int64 `index:"96"`
+    SecondaryParentThreadKey int64 `index:"97"`
+    IgFolder int64 `index:"98"`
+    InviterId int64 `index:"99"`
+    ThreadTags int64 `index:"100"`
+    ThreadStatus int64 `index:"101"`
+    ThreadSubtype int64 `index:"102"`
+    PauseThreadTimestamp int64 `index:"103"`
+    Capabilities4 int64 `index:"104"`
+}
+
+type LSSetThreadCannotUnsendReason struct {
+    ThreadKey int64 `index:"0"`
+    CannotUnsendReason int64 `index:"1"`
+}
+
+type LSClearLocalThreadPictureUrl struct {
+    ThreadKey int64 `index:"0"`
+}
+
+type LSUpdateInviterId struct {
+    ThreadKey int64 `index:"0"`
+    InviterId int64 `index:"1"`
+}
+
+type LSAddToMemberCount struct {
+    ThreadKey int64 `index:"0"`
+    IncrementCount int64 `index:"1"`
+}

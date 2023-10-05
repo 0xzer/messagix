@@ -13,7 +13,7 @@ import (
 type LightSpeedDecoder struct {
 	Table interface{} // struct that contains pointers to all the dependencies/stores
 	Dependencies map[string]string
-	StatementReferences map[int]int64
+	StatementReferences map[int]interface{}
 }
 
 func NewLightSpeedDecoder(dependencies map[string]string, table interface{}) *LightSpeedDecoder {
@@ -23,7 +23,7 @@ func NewLightSpeedDecoder(dependencies map[string]string, table interface{}) *Li
 	return &LightSpeedDecoder{
 		Table:              table,
 		Dependencies:       dependencies,
-		StatementReferences: make(map[int]int64),
+		StatementReferences: make(map[int]interface{}),
 	}
 }
 
@@ -57,8 +57,7 @@ func (ls *LightSpeedDecoder) Decode(data interface{}) interface{} {
 		return shouldLoad
 	case STORE:
 		retVal := ls.Decode(stepData[1])
-		ls.StatementReferences[int(stepData[0].(float64))] = retVal.(int64)
-		//log.Println(ls.StatementReferences)
+		ls.StatementReferences[int(stepData[0].(float64))] = retVal
 	case STORE_ARRAY:
 		key, ok := stepData[0].(float64)
 		if !ok {
@@ -105,6 +104,15 @@ func (ls *LightSpeedDecoder) Decode(data interface{}) interface{} {
 		return nil
 	case NATIVE_OP_MAP_CREATE:
 		return make(map[interface{}]interface{}, 0)
+	case NATIVE_OP_MAP_SET:
+		mapToUpdate, ok := ls.Decode(stepData[0]).(map[interface{}]interface{})
+		if !ok {
+			log.Println("failed to type assert map from statement references...")
+			return nil
+		}
+		mapKey := ls.Decode(stepData[1])
+		mapVal := ls.Decode(stepData[2])
+		mapToUpdate[mapKey] = mapVal
 	case LOGGER_LOG:
 		log.Println("[FB-LOGGER] Server log:", stepData[0])
 		return nil
@@ -137,11 +145,10 @@ func (ls *LightSpeedDecoder) handleStoredProcedure(referenceName string, data []
 		log.Println("Skipping dependency with reference name:",referenceName, data)
 		return
 	}
+
 	var err error
-	// get the Type of the elements of the slice
+
 	depFieldsType := depField.Type().Elem()
-	
-	// create a new instance of the underlying type
 	newDepInstance := reflect.New(depFieldsType).Elem()
 	for i := 0; i < depFieldsType.NumField(); i++ {
 		fieldInfo := depFieldsType.Field(i)
@@ -169,8 +176,8 @@ func (ls *LightSpeedDecoder) handleStoredProcedure(referenceName string, data []
 		if val == nil { // skip setting field, because the index in the array was [9] which is undefined.
 			continue
 		}
-		valType := reflect.TypeOf(val)
 
+		valType := reflect.TypeOf(val)
 		switch kind {
 		case reflect.Int64:
 			i64, ok := val.(int64)

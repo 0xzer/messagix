@@ -3,10 +3,10 @@ package messagix
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"github.com/0xzer/messagix/cookies"
 	"github.com/0xzer/messagix/crypto"
-	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/types"
 	"github.com/google/go-querystring/query"
 )
@@ -28,9 +28,9 @@ func (fb *FacebookMethods) Login(identifier, password string) (cookies.Cookies, 
 	v := reflect.ValueOf(&loginForm).Elem()
 	fb.client.configs.ParseFormInputs(loginInputs, v)
 
-	fb.client.configs.siteConfig.Jazoest = loginForm.Jazoest
+	fb.client.configs.Jazoest = loginForm.Jazoest
 
-	needsCookieConsent := len(modules.SchedulerJSDefined.InitialCookieConsent.InitialConsent) == 0
+	needsCookieConsent := len(fb.client.configs.browserConfigTable.InitialCookieConsent.InitialConsent) == 0
 	if needsCookieConsent {
 		err := fb.client.sendCookieConsent(moduleLoader.JSDatr)
 		if err != nil {
@@ -50,7 +50,7 @@ func (fb *FacebookMethods) Login(identifier, password string) (cookies.Cookies, 
 	loginForm.EncPass = encryptedPW
 	loginForm.AbTestData = data
 	loginForm.Lgndim = "eyJ3IjoyMjc1LCJoIjoxMjgwLCJhdyI6MjI3NiwiYWgiOjEyMzIsImMiOjI0fQ==" // irrelevant
-	loginForm.Lgnjs = fb.client.configs.siteConfig.SpinT
+	loginForm.Lgnjs = strconv.Itoa(fb.client.configs.browserConfigTable.SiteData.SpinT)
 	loginForm.Timezone = "-120"
 
 	form, err := query.Values(&loginForm)

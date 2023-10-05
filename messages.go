@@ -3,6 +3,8 @@ package messagix
 import (
 	"fmt"
 	"log"
+	"strconv"
+
 	"github.com/0xzer/messagix/socket"
 	"github.com/0xzer/messagix/table"
 )
@@ -12,11 +14,15 @@ type Messages struct {
 }
 
 func (m *Messages) SendReaction(threadId int64, messageId string, reaction string) (*table.LSTable, error) {
+	accId, err := strconv.Atoi(m.client.configs.browserConfigTable.CurrentUserInitialData.AccountID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert AccountId to int64: %e", err)
+	}
 	tskm := m.client.NewTaskManager()
 	tskm.AddNewTask(&socket.SendReactionTask{
 		ThreadKey: threadId,
 		MessageID: messageId,
-		ActorID: m.client.configs.siteConfig.AccountIdInt,
+		ActorID: int64(accId),
 		Reaction: reaction,
 		SendAttribution: table.MESSENGER_INBOX_IN_THREAD,
 	})

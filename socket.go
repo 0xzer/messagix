@@ -6,17 +6,24 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/0xzer/messagix/cookies"
-	"github.com/0xzer/messagix/modules"
+	"github.com/0xzer/messagix/methods"
 	"github.com/0xzer/messagix/packets"
 	"github.com/0xzer/messagix/types"
 	"github.com/gorilla/websocket"
 )
 
 var (
+	protocolName = "MQIsdp"
+	protocolClientId = "mqttwsclient"
+	protocolLevel = 3
+	keepAliveTimeout = 15
 	connectionTypes = map[types.Platform]string{
 		types.Instagram: "cookie_auth",
 		types.Facebook: "websocket",
@@ -34,6 +41,8 @@ type Socket struct {
 	mu *sync.Mutex
     packetsSent uint16
 	handshakeInterval *time.Ticker
+	sessionId int64
+	broker string
 }
 
 func (c *Client) NewSocketClient() *Socket {
@@ -47,6 +56,7 @@ func (c *Client) NewSocketClient() *Socket {
 		},
 		mu: &sync.Mutex{},
 		packetsSent: 0,
+		sessionId: methods.GenerateSessionId(),
 	}
 }
 
@@ -57,7 +67,10 @@ func (s *Socket) Connect() error {
 	}
 
 	headers := s.getConnHeaders()
-	brokerUrl := s.client.configs.mqttConfig.BuildBrokerUrl()
+	brokerUrl, err := s.BuildBrokerUrl()
+	if err != nil {
+		return fmt.Errorf("failed to build brokerUrl: %e", err)
+	}
 
 	dialer := websocket.Dialer{}
 	if s.client.proxy != nil {
@@ -81,6 +94,26 @@ func (s *Socket) Connect() error {
 
 	go s.beginReadStream()
 	return nil
+}
+
+func (s *Socket) IsConnected() bool {
+	return s.conn != nil
+}
+
+func (s *Socket) BuildBrokerUrl() (string, error) {
+	if s.broker == "" {
+		return "", fmt.Errorf("broker has not been set in socket struct (broker=%s)", s.broker)
+	}
+	query := &url.Values{}
+	query.Add("cid", s.client.configs.browserConfigTable.MqttWebDeviceID.ClientID)
+	query.Add("sid", strconv.Itoa(int(s.sessionId)))
+	
+	encodedQuery := query.Encode()
+	if !strings.HasSuffix(s.broker, "=") {
+		return s.broker + encodedQuery, nil
+	} else {
+		return s.broker + "&" + encodedQuery, nil
+	}
 }
 
 func (s *Socket) beginReadStream() {
@@ -203,7 +236,7 @@ type SocketLSRequestPayload struct {
 func (s *Socket) makeLSRequest(payload []byte, t int) (uint16, error) {
 	packetId := s.SafePacketId()
 	lsPayload := &SocketLSRequestPayload{
-		AppId: modules.SchedulerJSDefined.CurrentUserInitialData.AppID,
+		AppId: s.client.configs.browserConfigTable.CurrentUserInitialData.AppID,
 		Payload: string(payload),
 		RequestId: int(packetId),
 		Type: t,

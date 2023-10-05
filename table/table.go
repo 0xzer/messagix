@@ -98,9 +98,21 @@ type LSTable struct {
 	LSUpdateAttachmentCtaAtIndexIgnoringAuthority []LSUpdateAttachmentCtaAtIndexIgnoringAuthority
 	LSHasMatchingAttachmentCTA []LSHasMatchingAttachmentCTA
 	LSDeleteThenInsertIGContactInfo []LSDeleteThenInsertIGContactInfo
+	LSIssueNewTask []LSIssueNewTask
+	LSUpdateOrInsertThread []LSUpdateOrInsertThread
+	LSSetThreadCannotUnsendReason []LSSetThreadCannotUnsendReason
+	LSClearLocalThreadPictureUrl []LSClearLocalThreadPictureUrl
+	LSUpdateInviterId []LSUpdateInviterId
+	LSAddToMemberCount []LSAddToMemberCount
 }
 
 var SPTable = map[string]string{
+	"setThreadCannotUnsendReason": "LSSetThreadCannotUnsendReason",
+	"clearLocalThreadPictureUrl": "LSClearLocalThreadPictureUrl",
+	"updateInviterId": "LSUpdateInviterId",
+	"addToMemberCount": "LSAddToMemberCount",
+	"updateOrInsertThread": "LSUpdateOrInsertThread",
+	"issueNewTask": "LSIssueNewTask",
 	"deleteThenInsertIGContactInfo": "LSDeleteThenInsertIGContactInfo",
 	"hasMatchingAttachmentCTA": "LSHasMatchingAttachmentCTA",
 	"updateAttachmentCtaAtIndexIgnoringAuthority": "LSUpdateAttachmentCtaAtIndexIgnoringAuthority",

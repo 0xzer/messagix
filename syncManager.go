@@ -4,17 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+
 	"github.com/0xzer/messagix/graphql"
 	"github.com/0xzer/messagix/methods"
-	"github.com/0xzer/messagix/modules"
 	"github.com/0xzer/messagix/socket"
 	"github.com/0xzer/messagix/table"
+	"github.com/0xzer/messagix/types"
 )
 
 type SyncManager struct {
 	client *Client
 	store map[int64]*socket.QueryMetadata
-	syncParams *modules.LSPlatformMessengerSyncParams
+	syncParams *types.LSPlatformMessengerSyncParams
 }
 
 func (c *Client) NewSyncManager() *SyncManager {
@@ -36,7 +37,7 @@ func (c *Client) NewSyncManager() *SyncManager {
 			196: { SendSyncParams: true },
 			198: { SendSyncParams: true },
 		},
-		syncParams: &modules.LSPlatformMessengerSyncParams{},
+		syncParams: &types.LSPlatformMessengerSyncParams{},
 	}
 }
 
@@ -60,7 +61,7 @@ func (sm *SyncManager) SyncSocketData(databaseId int64, db *socket.QueryMetadata
 	var t int
 	payload := &socket.DatabaseQuery{
 		Database: databaseId,
-		Version: sm.client.configs.siteConfig.VersionId,
+		Version: sm.client.configs.VersionId,
 		EpochId: methods.GenerateEpochId(),
 	}
 
@@ -118,7 +119,7 @@ func (sm *SyncManager) SyncDataGraphQL(dbs []int64) (*table.LSTable, error) {
 		variables := &graphql.LSPlatformGraphQLLightspeedVariables{
 			Database: int(db),
 			LastAppliedCursor: database.LastAppliedCursor,
-			Version: sm.client.configs.siteConfig.VersionId,
+			Version: sm.client.configs.VersionId,
 			EpochID: 0,
 		}
 		if database.SendSyncParams {

@@ -148,8 +148,8 @@ const (
 
 type AppState int64
 const (
-   BACKGROUND AppState = 0
-   FOREGROUND AppState = 1
+   BACKGROUND AppState = 0 // not active
+   FOREGROUND AppState = 1 // active
 )
 
 type ReactionStyle int64
