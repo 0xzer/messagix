@@ -96,10 +96,6 @@ func (s *Socket) Connect() error {
 	return nil
 }
 
-func (s *Socket) IsConnected() bool {
-	return s.conn != nil
-}
-
 func (s *Socket) BuildBrokerUrl() (string, error) {
 	if s.broker == "" {
 		return "", fmt.Errorf("broker has not been set in socket struct (broker=%s)", s.broker)

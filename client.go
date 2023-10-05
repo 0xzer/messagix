@@ -153,6 +153,10 @@ func (c *Client) SaveSession(path string) error {
 	return os.WriteFile(path, jsonBytes, os.ModePerm)
 }
 
+func (c *Client) IsConnected() bool {
+	return c.socket.conn != nil
+}
+
 func (c *Client) sendCookieConsent(jsDatr string) error {
 	
 	var payloadQuery interface{}
