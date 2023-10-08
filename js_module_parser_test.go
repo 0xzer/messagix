@@ -1,6 +1,7 @@
 package messagix_test
 
 import (
+	"log"
 	"os"
 	"testing"
 
@@ -10,7 +11,10 @@ import (
 )
 
 func TestParseJS(t *testing.T) {
-	cli := messagix.NewClient(types.Instagram, nil, debug.NewLogger(), "")
+	cli, err := messagix.NewClient(types.Instagram, nil, debug.NewLogger(), "")
+	if err != nil {
+		log.Fatal(err)
+	}
 	parser := &messagix.ModuleParser{}
 	testData, _ := os.ReadFile("test_files/res.html")
 	parser.SetTestData(testData)

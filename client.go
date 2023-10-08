@@ -47,7 +47,7 @@ type Client struct {
 }
 
 // pass an empty zerolog.Logger{} for no logging
-func NewClient(platform types.Platform, cookies cookies.Cookies, logger zerolog.Logger, proxy string) *Client {
+func NewClient(platform types.Platform, cookies cookies.Cookies, logger zerolog.Logger, proxy string) (*Client, error) {
 	cli := &Client{
 		http: &http.Client{
 			Transport: &http.Transport{},
@@ -74,12 +74,12 @@ func NewClient(platform types.Platform, cookies cookies.Cookies, logger zerolog.
 	if proxy != "" {
 		err := cli.SetProxy(proxy)
 		if err != nil {
-			log.Fatalf("failed to set proxy: %e", err)
+			return nil, fmt.Errorf("messagix-client: failed to set proxy (%e)", err)
 		}
 	}
 
 	if !cli.cookies.IsLoggedIn() {
-		return cli
+		return cli, nil
 	}
 
 	socket := cli.NewSocketClient()
@@ -89,12 +89,12 @@ func NewClient(platform types.Platform, cookies cookies.Cookies, logger zerolog.
 	moduleLoader.Load(cli.getEndpoint("messages"))
 
 	cli.syncManager = cli.NewSyncManager()
-	configSetupErr := cli.configs.SetupConfigs()
-	if configSetupErr != nil {
-		log.Fatal(configSetupErr)
+	err := cli.configs.SetupConfigs()
+	if err != nil {
+		return nil, fmt.Errorf("messagix-configs: failed to setup configs (%e)", err)
 	}
 	
-	return cli
+	return cli, nil
 }
 
 func (c *Client) loadLoginPage() *ModuleParser {

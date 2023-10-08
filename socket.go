@@ -28,8 +28,9 @@ var (
 		types.Instagram: "cookie_auth",
 		types.Facebook: "websocket",
 	}
-	ErrSocketClosed      = errors.New("socket is closed")
-	ErrSocketAlreadyOpen = errors.New("socket is already open")
+	ErrSocketClosed      = errors.New("messagix-socket: socket is closed")
+	ErrSocketAlreadyOpen = errors.New("messagix-socket: socket is already open")
+	ErrNotAuthenticated  = errors.New("messagix-socket: client has not been authenticated successfully yet")
 )
 
 var handshakeBytes = []byte{192, 0} // pingreq packet
@@ -62,8 +63,11 @@ func (c *Client) NewSocketClient() *Socket {
 
 func (s *Socket) Connect() error {
 	if s.conn != nil {
-		s.client.Logger.Err(ErrSocketAlreadyOpen).Msg("Failed to initialize connection to socket")
 		return ErrSocketAlreadyOpen
+	}
+
+	if !s.client.IsAuthenticated() {
+		return ErrNotAuthenticated
 	}
 
 	headers := s.getConnHeaders()
