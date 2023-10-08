@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
 	"strconv"
 
 	"github.com/0xzer/messagix/cookies"
@@ -78,7 +79,7 @@ func NewClient(platform types.Platform, cookies cookies.Cookies, logger zerolog.
 		}
 	}
 
-	if cli.cookies == nil || !cli.cookies.IsLoggedIn() {
+	if reflect.ValueOf(cli.cookies).IsNil() || !cli.cookies.IsLoggedIn() {
 		return cli, nil
 	}
 
