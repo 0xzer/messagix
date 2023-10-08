@@ -80,3 +80,41 @@ type CurrentUserInitialData struct {
 	ShortName                       string `json:"SHORT_NAME,omitempty"`
 	UserID                          string `json:"USER_ID,omitempty"`
 }
+
+type PolarisViewer struct {
+	Data struct {
+		Biography                string `json:"biography,omitempty"`
+		BusinessAddressJSON      any    `json:"business_address_json,omitempty"`
+		BusinessContactMethod    string `json:"business_contact_method,omitempty"`
+		BusinessEmail            any    `json:"business_email,omitempty"`
+		BusinessPhoneNumber      any    `json:"business_phone_number,omitempty"`
+		CanSeeOrganicInsights    bool   `json:"can_see_organic_insights,omitempty"`
+		CategoryName             any    `json:"category_name,omitempty"`
+		ExternalURL              any    `json:"external_url,omitempty"`
+		Fbid                     string `json:"fbid,omitempty"`
+		FullName                 string `json:"full_name,omitempty"`
+		HasPhoneNumber           bool   `json:"has_phone_number,omitempty"`
+		HasProfilePic            bool   `json:"has_profile_pic,omitempty"`
+		HasTabbedInbox           bool   `json:"has_tabbed_inbox,omitempty"`
+		HideLikeAndViewCounts    bool   `json:"hide_like_and_view_counts,omitempty"`
+		ID                       string `json:"id,omitempty"`
+		IsBusinessAccount        bool   `json:"is_business_account,omitempty"`
+		IsJoinedRecently         bool   `json:"is_joined_recently,omitempty"`
+		IsSupervisedUser         bool   `json:"is_supervised_user,omitempty"`
+		GuardianID               any    `json:"guardian_id,omitempty"`
+		IsPrivate                bool   `json:"is_private,omitempty"`
+		IsProfessionalAccount    bool   `json:"is_professional_account,omitempty"`
+		IsSupervisionEnabled     bool   `json:"is_supervision_enabled,omitempty"`
+		IsUserInCanada           bool   `json:"is_user_in_canada,omitempty"`
+		ProfilePicURL            string `json:"profile_pic_url,omitempty"`
+		ProfilePicURLHd          string `json:"profile_pic_url_hd,omitempty"`
+		ShouldShowCategory       bool   `json:"should_show_category,omitempty"`
+		ShouldShowPublicContacts bool   `json:"should_show_public_contacts,omitempty"`
+		Username                 string `json:"username,omitempty"`
+		BadgeCount               string `json:"badge_count,omitempty"`
+		IsBasicAdsOptedIn        bool   `json:"is_basic_ads_opted_in,omitempty"`
+		BasicAdsTier             int    `json:"basic_ads_tier,omitempty"`
+		ProbablyHasApp           bool   `json:"probably_has_app,omitempty"`
+	} `json:"data,omitempty"`
+	ID string `json:"id,omitempty"`
+}

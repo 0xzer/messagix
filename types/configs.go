@@ -264,6 +264,7 @@ type SchedulerJSDefineConfig struct {
 	InstagramPasswordEncryption InstagramPasswordEncryption
 	XIGSharedData XIGSharedData
 	RelayAPIConfigDefaults RelayAPIConfigDefaults
+	PolarisViewer PolarisViewer
 }
 
 type MqttWebConfig struct {
