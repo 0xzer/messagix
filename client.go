@@ -78,7 +78,7 @@ func NewClient(platform types.Platform, cookies cookies.Cookies, logger zerolog.
 		}
 	}
 
-	if !cli.cookies.IsLoggedIn() {
+	if cli.cookies == nil || !cli.cookies.IsLoggedIn() {
 		return cli, nil
 	}
 
