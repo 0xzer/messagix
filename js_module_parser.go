@@ -63,7 +63,7 @@ func (m *ModuleParser) SetTestData(data []byte) {
 	m.testData = data
 }
 
-func (m *ModuleParser) fetchPageData(page string) []byte { // just log.fatal if theres an error because the library should not be able to continue then
+func (m *ModuleParser) fetchPageData(page string) ([]byte, error) { // just log.fatal if theres an error because the library should not be able to continue then
 	headers := m.client.buildHeaders(true)
 	headers.Add("connection", "keep-alive")
 	//headers.Add("host", m.client.getEndpoint("host"))
@@ -74,23 +74,27 @@ func (m *ModuleParser) fetchPageData(page string) []byte { // just log.fatal if 
 	headers.Add("upgrade-insecure-requests", "1")
 	_, responseBody, err := m.client.MakeRequest(page, "GET", headers, nil, types.NONE)
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("failed to fetch page data for module parser: %e", err))
+		return nil, fmt.Errorf("messagix-moduleparser: failed to fetch page data for page %s (%e)", page, err)
 	}
 
-	return responseBody
+	return responseBody, nil
 }
 
-func (m *ModuleParser) Load(page string) {
+func (m *ModuleParser) Load(page string) error {
 	var htmlData []byte
+	var err error
 	if m.testData == nil {
-		htmlData = m.fetchPageData(page)
+		htmlData, err = m.fetchPageData(page)
+		if err != nil {
+			return err
+		}
 	} else {
 		htmlData = m.testData
 	}
 
 	doc, err := html.Parse(bytes.NewReader(htmlData))
 	if err != nil {
-		log.Fatalf("failed to parse doc string: %e", err)
+		return fmt.Errorf("messagix-moduleparser: failed to parse doc string (%e)", err)
 	}
 
 	scriptTags := m.findScriptTags(doc)
@@ -112,7 +116,10 @@ func (m *ModuleParser) Load(page string) {
 			if err != nil {
 				tagStr := string(tag.Content)
 				if strings.HasPrefix(tagStr, "requireLazy") {
-					m.requireLazyModule(tagStr)
+					err = m.requireLazyModule(tagStr)
+					if err != nil {
+						return err
+					}
 					continue
 				}
 				//log.Println(fmt.Sprintf("failed to unmarshal content to moduleData: %e | content=%s", err, string(tag.Content)))
@@ -121,7 +128,10 @@ func (m *ModuleParser) Load(page string) {
 
 			req := data.Require
 		    for _, mod := range req {
-				m.handleModule(mod)
+				err = m.handleModule(mod)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -145,7 +155,7 @@ func (m *ModuleParser) Load(page string) {
 			case "script":
 				doneCrawling, err = m.crawlJavascriptFile(href)
 				if err != nil {
-					log.Fatalf("failed to crawl js file %s: %e", href, err)
+					return fmt.Errorf("messagix-moduleparser: failed to crawl js file %s (%e)", href, err)
 				}
 			}
 		}
@@ -155,7 +165,7 @@ func (m *ModuleParser) Load(page string) {
 		sharedData := m.client.configs.browserConfigTable.XIGSharedData
 		err = sharedData.ParseRaw()
 		if err != nil {
-			log.Fatalf("failed to parse XIGSharedData raw string into *types.XIGConfigData: %e", err)
+			return fmt.Errorf("messagix-moduleparser: failed to parse XIGSharedData raw string into *types.XIGConfigData (%e)", err)
 		}
 		m.client.Logger.Info().Any("authenticated", authenticated).Msg("Instagram Authentication Status")
 		if !authenticated {
@@ -165,7 +175,7 @@ func (m *ModuleParser) Load(page string) {
 				[]string{sharedData.ConfigData.Config.CsrfToken, sharedData.Native.DeviceID, methods.GenerateMachineId()},
 			)
 			if err != nil {
-				log.Fatalf("failed to update cookie values for csrftoken, ig_did: %e", err)
+				return fmt.Errorf("messagix-moduleparser: failed to update cookie values for csrftoken, ig_did (%e)", err)
 			}
 		}
 	}
@@ -177,18 +187,20 @@ func (m *ModuleParser) Load(page string) {
 		loginInputs := m.findInputTags(loginNode)
 		m.LoginInputs = loginInputs
 	}
+
+	return nil
 }
 
 type BigPipe struct {
 	JSMods *ModuleData `json:"jsmods,omitempty"`
 }
 
-func (m *ModuleParser) requireLazyModule(data string) {
+func (m *ModuleParser) requireLazyModule(data string) error {
 	moduleSplit := strings.Split(data[12:], "],")
 	var moduleNames []string
 	err := json.Unmarshal([]byte(moduleSplit[0] + "]"), &moduleNames)
 	if err != nil {
-		log.Fatalf("failed to get module names from requireLazy module: %e", err)
+		return fmt.Errorf("messagix-moduleparser: failed to get module names from requireLazy module (%e)", err)
 	}
 
 	for _, mName := range moduleNames {
@@ -202,13 +214,13 @@ func (m *ModuleParser) requireLazyModule(data string) {
 			var bigPipeData *BigPipe
 			err = json.Unmarshal([]byte(handleData), &bigPipeData)
 			if err != nil {
-				log.Fatalf("failed to unmarshal BigPipe data")
+				return fmt.Errorf("messagix-moduleparser: failed to unmarshal BigPipe data (%e)", err)
 			}
 
 			for _, d := range bigPipeData.JSMods.Define {
 				err := m.SSJSHandle(d)
 				if err != nil {
-					log.Fatalf("failed to handle serverjs module: %e", err)
+					return fmt.Errorf("messagix-moduleparser: failed to handle serverjs module (%e)", err)
 				}
 			}
 
@@ -223,13 +235,13 @@ func (m *ModuleParser) requireLazyModule(data string) {
 			var moduleData *ModuleData
 			err = json.Unmarshal([]byte(handleData), &moduleData)
 			if err != nil {
-				log.Fatalf("failed to unmarshal handleData[0] into struct *ModuleData")
+				return fmt.Errorf("messagix-moduleparser: failed to unmarshal handleData[0] into struct *ModuleData (%e)", err)
 			}
 
 			for _, d := range moduleData.Define {
 				err := m.SSJSHandle(d)
 				if err != nil {
-					log.Fatalf("failed to handle serverjs module: %e", err)
+					return fmt.Errorf("messagix-moduleparser: failed to handle serverjs module (%e)", err)
 				}
 			}
 		case "HasteSupportData":
@@ -243,12 +255,12 @@ func (m *ModuleParser) requireLazyModule(data string) {
 			var moduleData *ModuleData
 			err = json.Unmarshal([]byte(handleData), &moduleData)
 			if err != nil {
-				log.Fatalf("failed to unmarshal handleData[0] into struct *ModuleData")
+				return fmt.Errorf("messagix-moduleparser: failed to unmarshal handleData[0] into struct *ModuleData (%e)", err)
 			}
 			for _, d := range moduleData.Define {
 				err := m.SSJSHandle(d)
 				if err != nil {
-					log.Fatalf("failed to handle hastesupportdata module: %e", err)
+					return fmt.Errorf("messagix-moduleparser: failed to handle hastesupportdata module (%e)", err)
 				}
 			}
 		case "bootstrapWebSession":
@@ -258,6 +270,7 @@ func (m *ModuleParser) requireLazyModule(data string) {
 			continue
 		}
 	}
+	return nil
 }
 
 func (m *ModuleParser) crawlJavascriptFile(href string) (bool, error) {
@@ -282,7 +295,7 @@ func (m *ModuleParser) crawlJavascriptFile(href string) (bool, error) {
 	return false, nil
 }
 
-func (m *ModuleParser) handleModule(data []interface{}) {
+func (m *ModuleParser) handleModule(data []interface{}) error {
 	modName := data[0].(string)
 	modData := data[3].([]interface{})
 	switch modName {
@@ -293,7 +306,7 @@ func (m *ModuleParser) handleModule(data []interface{}) {
 				case "handle":
 					err := m.SSJSHandle(d)
 					if err != nil {
-						log.Fatalf("failed to handle scheduledserverjs module: %e", err)
+						return fmt.Errorf("messagix-moduleparser: failed to handle scheduledserverjs module (%e)", err)
 					}
 				}
 			}
@@ -304,7 +317,7 @@ func (m *ModuleParser) handleModule(data []interface{}) {
 					case "handlePayload":
 						err := m.Bootloader_HandlePayload(d, &m.client.configs.browserConfigTable.BootloaderConfig)
 						if err != nil {
-							log.Fatalf("failed to handle Bootloader_handlePayload call: %e", err)
+							return fmt.Errorf("messagix-moduleparser: failed to handle Bootloader_handlePayload call (%e)", err)
 						}
 						//debug.Debug().Any("csrBitmap", modules.CsrBitmap).Msg("handlePayload")
 				}
@@ -318,6 +331,7 @@ func (m *ModuleParser) handleModule(data []interface{}) {
 		}
 		*/
 	}
+	return nil
 }
 
 type NodeProcessor func(*html.Node) interface{}

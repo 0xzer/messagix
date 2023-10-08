@@ -135,7 +135,7 @@ func (m *ModuleParser) handleRequire(modName string, data []interface{}) error {
 	return nil
 }
 
-func (m *ModuleParser) handleLightSpeedQLRequest(data interface{}, parserFunc string) {
+func (m *ModuleParser) handleLightSpeedQLRequest(data interface{}, parserFunc string) error {
 	var lsPayloadStr string
 	var deps interface{}
 	switch parserFunc {
@@ -143,7 +143,7 @@ func (m *ModuleParser) handleLightSpeedQLRequest(data interface{}, parserFunc st
 		var lsData *graphql.LSPlatformGraphQLLightspeedRequestForIGDQuery
 		err := methods.InterfaceToStructJSON(&data, &lsData)
 		if err != nil {
-			log.Fatalf("failed to parse LightSpeedQLRequest data from html (INSTAGRAM): %e", err)
+			return fmt.Errorf("messagix-moduleparser: failed to parse LightSpeedQLRequest data from html (INSTAGRAM): %e", err)
 		}
 		lsPayloadStr = lsData.Data.LightspeedWebRequestForIgd.Payload
 		deps = lsData.Data.LightspeedWebRequestForIgd.Dependencies
@@ -151,14 +151,14 @@ func (m *ModuleParser) handleLightSpeedQLRequest(data interface{}, parserFunc st
 		var lsData *graphql.LSPlatformGraphQLLightspeedRequestQuery
 		err := methods.InterfaceToStructJSON(&data, &lsData)
 		if err != nil {
-			log.Fatalf("failed to parse LightSpeedQLRequest data from html (FACEBOOK): %e", err)
+			return fmt.Errorf("messagix-moduleparser: failed to parse LightSpeedQLRequest data from html (FACEBOOK): %e", err)
 		}
 		lsPayloadStr = lsData.Data.Viewer.LightspeedWebRequest.Payload
 		deps = lsData.Data.Viewer.LightspeedWebRequest.Dependencies
 	}
 	
 	if lsPayloadStr == "" { // skip cuz payload null
-		return
+		return nil
 	}
 
 	dependencies := lightspeed.DependenciesToMap(deps)
@@ -167,10 +167,11 @@ func (m *ModuleParser) handleLightSpeedQLRequest(data interface{}, parserFunc st
 	var payload lightspeed.LightSpeedData
 	err := json.Unmarshal([]byte(lsPayloadStr), &payload)
 	if err != nil {
-		log.Fatalf("failed to marshal lsPayloadStr into LightSpeedData: %e", err)
+		return fmt.Errorf("messagix-moduleparser: failed to marshal lsPayloadStr into LightSpeedData: %e", err)
 	}
 	
 	decoder.Decode(payload.Steps)
+	return nil
 }
 
 func (m *ModuleParser) handleGraphQLData(name string, data interface{}) {
@@ -216,7 +217,7 @@ func (m *ModuleParser) SSJSHandle(data interface{}) error {
 			err = m.handleDefine("default_define", interfaceData)
 			return err
 		}
-		log.Fatalf("failed to convert ssjs data to map[string]interface{}")
+		return fmt.Errorf("messagix-moduleparser: failed to convert ssjs data to map[string]interface{}")
 	}
 
 	for k, v := range box {
@@ -269,14 +270,22 @@ func (m *ModuleParser) Bootloader_HandlePayload(payload interface{}, bootloaderC
 	}
 
 	if data.CsrUpgrade != "" {
-		m.client.configs.CsrBitmap.BMap = append(m.client.configs.CsrBitmap.BMap, m.parseCSRBit(data.CsrUpgrade)...)
+		newBits, err := m.parseCSRBit(data.CsrUpgrade)
+		if err != nil {
+			return err
+		}
+		m.client.configs.CsrBitmap.BMap = append(m.client.configs.CsrBitmap.BMap, newBits...)
 	}
 
 	if len(data.RsrcMap) > 0 {
 		for _, v := range data.RsrcMap {
 			shouldAdd := (bootloaderConfig.PhdOn && v.C == 2) || (!bootloaderConfig.PhdOn && v.C != 0)
 			if shouldAdd {
-				m.client.configs.CsrBitmap.BMap = append(m.client.configs.CsrBitmap.BMap, m.parseCSRBit(v.P)...)
+				newBits, err := m.parseCSRBit(v.P)
+				if err != nil {
+					return err
+				}
+				m.client.configs.CsrBitmap.BMap = append(m.client.configs.CsrBitmap.BMap, newBits...)
 			}
 		}
 	}
@@ -285,18 +294,18 @@ func (m *ModuleParser) Bootloader_HandlePayload(payload interface{}, bootloaderC
 }
 
 // s always start with :
-func (m *ModuleParser) parseCSRBit(s string) []int {
+func (m *ModuleParser) parseCSRBit(s string) ([]int, error) {
 	bits := make([]int, 0)
 	splitUp := strings.Split(s[1:], ",")
 	for _, b := range splitUp {
 		conv, err := strconv.ParseInt(b, 10, 32)
 		if err != nil {
-			log.Fatalf("failed to parse csrbit: %e", err)
+			return nil, fmt.Errorf("messagix-moduleparser: failed to parse csrbit: %e", err)
 		}
 		if conv == 0 {
 			continue
 		}
 		bits = append(bits, int(conv))
 	}
-	return bits
+	return bits, nil
 }

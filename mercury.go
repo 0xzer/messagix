@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"mime/multipart"
 	"net/textproto"
 	"reflect"
@@ -36,8 +35,10 @@ func (c *Client) SendMercuryUploadRequest(medias []*MercuryUploadMedia) ([]*type
 
 		payloadQuery := queryValues.Encode()
 		url := c.getEndpoint("media_upload") + payloadQuery
-		payload, contentType := c.NewMercuryMediaPayload(media)
-
+		payload, contentType, err := c.NewMercuryMediaPayload(media)
+		if err != nil {
+			return nil, err
+		}
 		h := c.buildHeaders(true)
 		h.Add("content-type", contentType)
 		h.Add("origin", c.getEndpoint("base_url"))
@@ -101,13 +102,13 @@ func (c *Client) parseMetadata(response *types.MercuryUploadResponse) error {
 }
 
 // returns payloadBytes, multipart content-type header
-func (c *Client) NewMercuryMediaPayload(media *MercuryUploadMedia) ([]byte, string) {
+func (c *Client) NewMercuryMediaPayload(media *MercuryUploadMedia) ([]byte, string, error) {
 	var mercuryPayload bytes.Buffer
 	writer := multipart.NewWriter(&mercuryPayload)
 
 	err := writer.SetBoundary("----WebKitFormBoundary" + methods.RandStr(16))
 	if err != nil {
-		log.Fatalf("Failed to set boundary: %v", err)
+		return nil, "", fmt.Errorf("messagix-mercury: Failed to set boundary (%e)", err)
 	}
 	
 	partHeader := textproto.MIMEHeader{
@@ -117,18 +118,18 @@ func (c *Client) NewMercuryMediaPayload(media *MercuryUploadMedia) ([]byte, stri
 
 	mediaPart, err := writer.CreatePart(partHeader)
 	if err != nil {
-		log.Fatalf("Failed to create multipart writer: %v", err)
+		return nil, "", fmt.Errorf("messagix-mercury: Failed to create multipart writer (%e)", err)
 	}
 
 	_, err = mediaPart.Write(media.MediaData)
 	if err != nil {
-		log.Fatalf("Failed to write data to multipart section: %v", err)
+		return nil, "", fmt.Errorf("messagix-mercury: Failed to write data to multipart section (%e)", err)
 	}
 
 	err = writer.Close()
 	if err != nil {
-		log.Fatalf("Failed to close multipart writer: %v", err)
+		return nil, "", fmt.Errorf("messagix-mercury: Failed to close multipart writer (%e)", err)
 	}
 
-	return mercuryPayload.Bytes(), writer.FormDataContentType()
+	return mercuryPayload.Bytes(), writer.FormDataContentType(), nil
 }

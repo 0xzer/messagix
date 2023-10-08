@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -151,7 +150,7 @@ func (s *Socket) startHandshakeInterval() {
 func (s *Socket) sendHandshake() {
 	err := s.sendData(handshakeBytes)
 	if err != nil {
-		log.Fatalf("failed to send handshake data: %e", err)
+		s.client.Logger.Err(err).Msg("failed to send handshake data to socket...")
 	}
 
 	// TO-DO implement channels to handle the server not responding with a PINGRESP packet

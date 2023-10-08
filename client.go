@@ -83,19 +83,34 @@ func NewClient(platform types.Platform, cookies cookies.Cookies, logger zerolog.
 		return cli, nil
 	}
 
-	socket := cli.NewSocketClient()
-	cli.socket = socket
-
-	moduleLoader := &ModuleParser{client: cli}
-	moduleLoader.Load(cli.getEndpoint("messages"))
-
-	cli.syncManager = cli.NewSyncManager()
-	err := cli.configs.SetupConfigs()
+	err := cli.configureAfterLogin()
 	if err != nil {
-		return nil, fmt.Errorf("messagix-configs: failed to setup configs (%e)", err)
+		return nil, err
 	}
 	
 	return cli, nil
+}
+
+func (c *Client) configureAfterLogin() error {
+	if !c.cookies.IsLoggedIn() {
+		return fmt.Errorf("messagix-client: can't configure client after login, not authenticated yet")
+	}
+	socket := c.NewSocketClient()
+	c.socket = socket
+
+	moduleLoader := &ModuleParser{client: c}
+	err := moduleLoader.Load(c.getEndpoint("messages"))
+	if err != nil {
+		return err
+	}
+
+	c.syncManager = c.NewSyncManager()
+	err = c.configs.SetupConfigs()
+	if err != nil {
+		return fmt.Errorf("messagix-configs: failed to setup configs (%e)", err)
+	}
+
+	return nil
 }
 
 func (c *Client) loadLoginPage() *ModuleParser {
@@ -142,6 +157,12 @@ func (c *Client) SetEventHandler(handler EventHandler) {
 }
 
 func (c *Client) Connect() error {
+	if c.socket == nil {
+		err := c.configureAfterLogin()
+		if err != nil {
+			return err
+		}
+	}
 	return c.socket.Connect()
 }
 
