@@ -79,7 +79,7 @@ func NewClient(platform types.Platform, cookies cookies.Cookies, logger zerolog.
 		}
 	}
 
-	if reflect.ValueOf(cli.cookies).IsNil() || !cli.cookies.IsLoggedIn() {
+	if !cli.cookies.IsLoggedIn() {
 		return cli, nil
 	}
 
@@ -119,7 +119,7 @@ func (c *Client) configurePlatformClient() {
 	}
 
 	c.endpoints = selectedEndpoints
-	if c.cookies == nil {
+	if reflect.ValueOf(c.cookies).IsNil() {
 		c.cookies = cookieStruct
 	}
 }
