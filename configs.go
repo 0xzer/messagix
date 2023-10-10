@@ -69,8 +69,10 @@ func (c *Configs) SetupConfigs() error {
 		c.client.Logger.Info().Any("versionId", c.VersionId).Any("appId", c.browserConfigTable.MessengerWebInitData.AppID).Msg("Loaded versionId & appId")
 		c.client.Logger.Info().Any("broker", c.client.socket.broker).Msg("Configs successfully setup!")
 	} else {
-		c.client.Logger.Info().Any("value", c.Bitmap.CompressedStr).Msg("Loaded __dyn bitmap")
-		c.client.Logger.Info().Any("value", c.CsrBitmap.CompressedStr).Msg("Loaded __csr bitmap")
+		if c.Bitmap.CompressedStr != "" {
+			c.client.Logger.Info().Any("value", c.Bitmap.CompressedStr).Msg("Loaded __dyn bitmap")
+			c.client.Logger.Info().Any("value", c.CsrBitmap.CompressedStr).Msg("Loaded __csr bitmap")
+		}
 		c.client.Logger.Info().Any("platform", c.client.platform).Msg("Configs loaded, but not yet logged in.")
 	}
 	
