@@ -50,7 +50,7 @@ func tableReflectionTest(loadedTable *table.LSTable) {
 			case []table.LSUpsertMessage:
 				log.Println(data)
 			case []table.LSDeleteThenInsertIGContactInfo:
-				log.Println(data)
+				log.Println(data, fieldValue.Type().Elem().String())
 			default:
 			}
 		}

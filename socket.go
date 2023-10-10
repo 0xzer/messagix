@@ -137,7 +137,7 @@ func (s *Socket) startHandshakeInterval() {
         s.handshakeInterval.Stop()
     }
 
-    s.handshakeInterval = time.NewTicker(15 * time.Second)
+    s.handshakeInterval = time.NewTicker(10 * time.Second)
 	s.client.Logger.Info().Msg("Starting handshakeInterval...")
     go func() {
         for range s.handshakeInterval.C {
@@ -255,6 +255,7 @@ func (s *Socket) makeLSRequest(payload []byte, t int) (uint16, error) {
 }
 
 func (s *Socket) CloseHandler(code int, text string) error {
+	s.handshakeInterval.Stop()
 	s.conn = nil
 	if s.client.eventHandler != nil {
 		socketCloseEvent := &Event_SocketClosed{
