@@ -18,6 +18,7 @@ type Cookies interface {
 	GetValue(name string) string
 	GetViewports() (string, string)
 	IsLoggedIn() bool
+	ToJSON() ([]byte, error)
 }
 
 func UpdateValue(cookieStruct Cookies, name, val string) {

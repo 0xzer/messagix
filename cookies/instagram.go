@@ -1,5 +1,7 @@
 package cookies
 
+import "encoding/json"
+
 type InstagramCookies struct {
 	SessionId  string `cookie:"sessionid,omitempty" json:"SessionId,omitempty"`
 	CsrfToken  string `cookie:"csrftoken,omitempty" json:"CsrfToken,omitempty"`
@@ -10,6 +12,10 @@ type InstagramCookies struct {
 	ShbId 	   string `cookie:"shbid,omitempty" json:"ShbId,omitempty"`
 	Shbts 	   string `cookie:"shbts,omitempty" json:"Shbts,omitempty"`
 	IgWWWClaim string `json:"IgWWWClaim,omitempty"`
+}
+
+func (ig *InstagramCookies) ToJSON() ([]byte, error) {
+	return json.Marshal(&ig)
 }
 
 func (ig *InstagramCookies) GetValue(name string) string {
