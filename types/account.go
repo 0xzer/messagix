@@ -1,5 +1,18 @@
 package types
 
+type AccountInfo interface {
+	GetUserId() string
+	GetFbId() string
+	GetUsername() string
+	GetName() string
+	GetAvatarURL() string
+	GetAvatarURLHD() string
+	GetBiography() string
+	GetExternalUrl() string
+	GetBusinessEmail() string
+	HasPhoneNumber() bool
+	IsPrivate() bool
+}
 
 type CurrentBusinessAccount struct {
 	BusinessAccountName                              any    `json:"businessAccountName,omitempty"`
@@ -81,16 +94,60 @@ type CurrentUserInitialData struct {
 	UserID                          string `json:"USER_ID,omitempty"`
 }
 
+func (c *CurrentUserInitialData) GetBusinessEmail() string {
+	return "" // TO-DO
+}
+
+func (c *CurrentUserInitialData) GetUserId() string {
+	return c.UserID
+}
+
+func (c *CurrentUserInitialData) GetName() string {
+	return c.Name
+}
+
+func (c *CurrentUserInitialData) GetUsername() string {
+	return c.ShortName
+}
+
+func (c *CurrentUserInitialData) GetFbId() string {
+	return c.AccountID
+}
+
+func (c *CurrentUserInitialData) IsPrivate() bool {
+	return false // TO-DO
+}
+
+func (c *CurrentUserInitialData) GetAvatarURLHD() string {
+	return "" // TO-DO
+}
+
+func (c *CurrentUserInitialData) GetAvatarURL() string {
+	return "" // TO-DO
+}
+
+func (c *CurrentUserInitialData) GetBiography() string {
+	return "" // TO-DO
+}
+
+func (c *CurrentUserInitialData) HasPhoneNumber() bool {
+	return false // TO-DO
+}
+
+func (c *CurrentUserInitialData) GetExternalUrl() string {
+	return "" // TO-DO
+}
+
 type PolarisViewer struct {
 	Data struct {
 		Biography                string `json:"biography,omitempty"`
 		BusinessAddressJSON      any    `json:"business_address_json,omitempty"`
 		BusinessContactMethod    string `json:"business_contact_method,omitempty"`
-		BusinessEmail            any    `json:"business_email,omitempty"`
+		BusinessEmail            string    `json:"business_email,omitempty"`
 		BusinessPhoneNumber      any    `json:"business_phone_number,omitempty"`
 		CanSeeOrganicInsights    bool   `json:"can_see_organic_insights,omitempty"`
 		CategoryName             any    `json:"category_name,omitempty"`
-		ExternalURL              any    `json:"external_url,omitempty"`
+		ExternalURL              string    `json:"external_url,omitempty"`
 		Fbid                     string `json:"fbid,omitempty"`
 		FullName                 string `json:"full_name,omitempty"`
 		HasPhoneNumber           bool   `json:"has_phone_number,omitempty"`
@@ -117,4 +174,48 @@ type PolarisViewer struct {
 		ProbablyHasApp           bool   `json:"probably_has_app,omitempty"`
 	} `json:"data,omitempty"`
 	ID string `json:"id,omitempty"`
+}
+
+func (p *PolarisViewer) GetUserId() string {
+	return p.ID
+}
+
+func (p *PolarisViewer) GetUsername() string {
+	return p.Data.Username
+}
+
+func (p *PolarisViewer) GetName() string {
+	return p.Data.FullName
+}
+
+func (p *PolarisViewer) GetFbId() string {
+	return p.Data.Fbid
+}
+
+func (p *PolarisViewer) GetAvatarURLHD() string {
+	return p.Data.ProfilePicURLHd
+}
+
+func (p *PolarisViewer) GetAvatarURL() string {
+	return p.Data.ProfilePicURL
+}
+
+func (p *PolarisViewer) GetBiography() string {
+	return p.Data.Biography
+}
+
+func (p *PolarisViewer) GetExternalUrl() string {
+	return p.Data.ExternalURL
+}
+
+func (p *PolarisViewer) IsPrivate() bool {
+	return p.Data.IsPrivate
+}
+
+func (p *PolarisViewer) HasPhoneNumber() bool {
+	return p.Data.HasPhoneNumber
+}
+
+func (p *PolarisViewer) GetBusinessEmail() string {
+	return p.Data.BusinessEmail
 }

@@ -41,11 +41,20 @@ func evHandler(evt interface{}) {
 			cli.Logger.Info().
 			Any("connectionCode", evtData.ConnectionCode.ToString()).
 			Any("isNewSession", evtData.IsNewSession).
-			Any("total_messages", len(evtData.Messages)).
-			Any("total_threads", len(evtData.Threads)).
-			Any("total_contacts", len(evtData.Contacts)).
+			Any("user_id", evtData.CurrentUser.GetUserId()).
+			Any("username", evtData.CurrentUser.GetUsername()).
 			Any("platform", cli.CurrentPlatform()).
+			Any("full_name", evtData.CurrentUser.GetName()).
+			Any("biography", evtData.CurrentUser.GetBiography()).
+			Any("avatar_url", evtData.CurrentUser.GetAvatarURL()).
+			Any("avatar_url_hd", evtData.CurrentUser.GetAvatarURLHD()).
+			Any("fb_id", evtData.CurrentUser.GetFbId()).
+			Any("has_phone_number", evtData.CurrentUser.HasPhoneNumber()).
+			Any("external_url", evtData.CurrentUser.GetExternalUrl()).
+			Any("is_private", evtData.CurrentUser.IsPrivate()).
+			Any("business_email", evtData.CurrentUser.GetBusinessEmail()).
 			Msg("Client is ready!")
+			os.Exit(1)
 		case *messagix.Event_PublishResponse:
 			cli.Logger.Info().Any("tableData", evtData.Table).Msg("Received new event from socket")
 		case *messagix.Event_Error:

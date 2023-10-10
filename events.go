@@ -164,7 +164,7 @@ type Event_Ready struct {
 	client *Client
 	IsNewSession   bool
 	ConnectionCode ConnectionCode
-	CurrentUser types.CurrentUserInitialData `skip:"1"`
+	CurrentUser types.AccountInfo `skip:"1"`
 	Threads []table.LSDeleteThenInsertThread `skip:"1"`
 	Messages []table.LSUpsertMessage `skip:"1"`
 	Contacts []table.LSVerifyContactRowExists `skip:"1"`
@@ -174,7 +174,11 @@ func (pb *Event_Ready) SetIdentifier(identifier int16) {}
 
 
 func (e *Event_Ready) Finish() ResponseData {
-	e.CurrentUser = e.client.configs.browserConfigTable.CurrentUserInitialData
+	if e.client.platform == types.Facebook {
+		e.CurrentUser = &e.client.configs.browserConfigTable.CurrentUserInitialData
+	} else {
+		e.CurrentUser = &e.client.configs.browserConfigTable.PolarisViewer
+	}
 	e.Threads = e.client.configs.accountConfigTable.LSDeleteThenInsertThread
 	e.Messages = e.client.configs.accountConfigTable.LSUpsertMessage
 	e.Contacts = e.client.configs.accountConfigTable.LSVerifyContactRowExists
