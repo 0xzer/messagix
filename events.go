@@ -247,7 +247,7 @@ func (pb *Event_SubscribeACK) Finish() ResponseData {
 	return pb
 }
 
-// Event_PublishResponse is never emitted, instead we will convert this into seperate events
+// Event_PublishResponse is emitted if the packetId/requestId from the websocket is 0 or nil
 //
 // It will also be used for handling the responses after calling a function like GetContacts through the requestId
 type Event_PublishResponse struct {
