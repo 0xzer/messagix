@@ -289,3 +289,15 @@ func (c *Client) CurrentPlatform() string {
 	}
 	return s
 }
+
+func (c *Client) GetCurrentAccount() (types.AccountInfo, error) {
+	if !c.IsAuthenticated() {
+		return nil, fmt.Errorf("messagix-client: not yet authenticated")
+	}
+
+	if c.platform == types.Facebook {
+		return &c.configs.browserConfigTable.CurrentUserInitialData, nil
+	} else {
+		return &c.configs.browserConfigTable.PolarisViewer, nil
+	}
+}
