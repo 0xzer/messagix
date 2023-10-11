@@ -28,7 +28,7 @@ type LSDeleteThenInsertThread struct {
     AuthorityLevel int64 `index:"6"`
     ThreadKey int64 `index:"7"`
     MailboxType int64 `index:"8"`
-    ThreadType int64 `index:"9"`
+    ThreadType ThreadType `index:"9"`
     FolderName string `index:"10"`
     ThreadPictureUrlFallback string `index:"11"`
     ThreadPictureUrlExpirationTimestampMs int64 `index:"12"`
@@ -162,7 +162,7 @@ type LSUpdateThreadSnippet struct {
 
 type LSVerifyThreadExists struct {
     ThreadKey int64 `index:"0"`
-    ThreadType int64 `index:"1"`
+    ThreadType ThreadType `index:"1"`
     FolderName string `index:"2"`
     ParentThreadKey int64 `index:"3"`
     AuthorityLevel int64 `index:"4"`
@@ -213,7 +213,7 @@ type LSReplaceOptimisticThread struct {
 type LSApplyNewGroupThread struct {
     OtidOfFirstMessage string `index:"0"`
     ThreadKey int64 `index:"1"`
-    ThreadType int64 `index:"2"`
+    ThreadType ThreadType `index:"2"`
     FolderName string `index:"3"`
     ParentThreadKey int64 `index:"4"`
     ThreadPictureUrlFallback string `index:"5"`
@@ -310,7 +310,7 @@ type LSUpdateOrInsertThread struct {
     AuthorityLevel int64 `index:"6"`
     ThreadKey int64 `index:"7"`
     MailboxType int64 `index:"8"`
-    ThreadType int64 `index:"9"`
+    ThreadType ThreadType `index:"9"`
     FolderName string `index:"10"`
     ThreadPictureUrlFallback string `index:"11"`
     ThreadPictureUrlExpirationTimestampMs int64 `index:"12"`
@@ -406,4 +406,32 @@ type LSUpdateInviterId struct {
 type LSAddToMemberCount struct {
     ThreadKey int64 `index:"0"`
     IncrementCount int64 `index:"1"`
+}
+
+type LSMoveThreadToArchivedFolder struct {
+    ThreadKey int64 `index:"0"`
+}
+
+type LSRemoveParticipantFromThread struct {
+    ThreadKey int64 `index:"0"`
+    ParticipantId int64 `index:"1"`
+}
+
+type LSDeleteRtcRoomOnThread struct {
+    ThreadKey int64 `index:"0"`
+}
+
+type LSUpdateThreadTheme struct {
+    ThreadKey int64 `index:"0"`
+    Unknown1 int64 `index:"1"`
+    Unknown2 int64 `index:"2"`
+}
+
+type LSUpdateThreadApprovalMode struct {
+    ThreadKey int64 `index:"0"`
+    Value bool `index:"1"`
+}
+
+type LSRemoveAllRequestsFromAdminApprovalQueue struct {
+    ThreadKey int64 `index:"0"`
 }

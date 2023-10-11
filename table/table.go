@@ -104,9 +104,21 @@ type LSTable struct {
 	LSClearLocalThreadPictureUrl []LSClearLocalThreadPictureUrl
 	LSUpdateInviterId []LSUpdateInviterId
 	LSAddToMemberCount []LSAddToMemberCount
+	LSMoveThreadToArchivedFolder []LSMoveThreadToArchivedFolder
+	LSRemoveParticipantFromThread []LSRemoveParticipantFromThread
+	LSDeleteRtcRoomOnThread []LSDeleteRtcRoomOnThread
+	LSUpdateThreadTheme []LSUpdateThreadTheme
+	LSUpdateThreadApprovalMode []LSUpdateThreadApprovalMode
+	LSRemoveAllRequestsFromAdminApprovalQueue []LSRemoveAllRequestsFromAdminApprovalQueue
 }
 
 var SPTable = map[string]string{
+	"removeAllRequestsFromAdminApprovalQueue": "LSRemoveAllRequestsFromAdminApprovalQueue",
+	"updateThreadApprovalMode": "LSUpdateThreadApprovalMode",
+	"updateThreadTheme": "LSUpdateThreadTheme",
+	"deleteRtcRoomOnThread": "LSDeleteRtcRoomOnThread",
+	"removeParticipantFromThread": "LSRemoveParticipantFromThread",
+	"moveThreadToArchivedFolder": "LSMoveThreadToArchivedFolder",
 	"setThreadCannotUnsendReason": "LSSetThreadCannotUnsendReason",
 	"clearLocalThreadPictureUrl": "LSClearLocalThreadPictureUrl",
 	"updateInviterId": "LSUpdateInviterId",

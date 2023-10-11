@@ -38,6 +38,7 @@ func TestDecode(t *testing.T) {
 	tableReflectionTest(lsTable)
 }
 
+
 func tableReflectionTest(loadedTable *table.LSTable) {
 	values := reflect.ValueOf(loadedTable).Elem()
 
@@ -47,10 +48,12 @@ func tableReflectionTest(loadedTable *table.LSTable) {
 		
 		if fieldKind == reflect.Slice && fieldValue.Len() > 0 {
 			switch data := fieldValue.Interface().(type) {
-			case []table.LSUpsertMessage:
+			case []table.LSUpdateOrInsertThread:
 				log.Println(data)
-			case []table.LSDeleteThenInsertIGContactInfo:
-				log.Println(data, fieldValue.Type().Elem().String())
+			case []table.LSBumpThread:
+				log.Println(data[0].Unknown1)
+			case []table.LSVerifyThreadExists:
+				log.Println(data[0].ThreadType, data[0])
 			default:
 			}
 		}

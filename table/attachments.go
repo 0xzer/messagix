@@ -197,43 +197,43 @@ type LSInsertAttachmentItem struct {
     ThreadKey int64 `index:"2"`
     MessageId string `index:"4"`
     OriginalPageSenderId int64 `index:"7"`
-    TitleText int64 `index:"8"`
-    SubtitleText int64 `index:"9"`
-    PlayableUrl int64 `index:"12"`
-    PlayableUrlFallback int64 `index:"13"`
+    TitleText string `index:"8"`
+    SubtitleText string `index:"9"`
+    PlayableUrl string `index:"12"`
+    PlayableUrlFallback string `index:"13"`
     PlayableUrlExpirationTimestampMs int64 `index:"14"`
-    PlayableUrlMimeType int64 `index:"15"`
-    DashManifest int64 `index:"16"`
+    PlayableUrlMimeType string `index:"15"`
+    DashManifest string `index:"16"`
     PreviewUrl string `index:"17"`
     PreviewUrlFallback string `index:"18"`
     PreviewUrlExpirationTimestampMs int64 `index:"19"`
     PreviewUrlMimeType string `index:"20"`
     PreviewWidth int64 `index:"21"`
     PreviewHeight int64 `index:"22"`
-    ImageUrl int64 `index:"23"`
+    ImageUrl string `index:"23"`
     DefaultCtaId int64 `index:"24"`
-    DefaultCtaTitle int64 `index:"25"`
+    DefaultCtaTitle string `index:"25"`
     DefaultCtaType int64 `index:"26"`
     DefaultButtonType int64 `index:"28"`
-    DefaultActionUrl int64 `index:"29"`
+    DefaultActionUrl string `index:"29"`
     DefaultActionEnableExtensions bool `index:"30"`
     DefaultWebviewHeightRatio int64 `index:"32"`
     AttachmentCta1Id int64 `index:"34"`
-    Cta1Title int64 `index:"35"`
+    Cta1Title string `index:"35"`
     Cta1IconType int64 `index:"36"`
     Cta1Type int64 `index:"37"`
     AttachmentCta2Id int64 `index:"39"`
-    Cta2Title int64 `index:"40"`
+    Cta2Title string `index:"40"`
     Cta2IconType int64 `index:"41"`
     Cta2Type int64 `index:"42"`
     AttachmentCta3Id int64 `index:"44"`
-    Cta3Title int64 `index:"45"`
+    Cta3Title string `index:"45"`
     Cta3IconType int64 `index:"46"`
     Cta3Type int64 `index:"47"`
-    FaviconUrl int64 `index:"48"`
-    FaviconUrlFallback int64 `index:"49"`
+    FaviconUrl string `index:"48"`
+    FaviconUrlFallback string `index:"49"`
     FaviconUrlExpirationTimestampMs int64 `index:"50"`
-    PreviewUrlLarge int64 `index:"51"`
+    PreviewUrlLarge string `index:"51"`
 }
 
 type LSGetFirstAvailableAttachmentCTAID struct {}

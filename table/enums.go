@@ -31,7 +31,6 @@ const (
 )
 
 type ThreadSourceType int64
-
 const (
    /* communityFriendsDialog, pagesHomeFriendsDialog, mutualFriendsDialog, birthday, groupMembers, fundraiserSupportersList, memories, feedPoll, reactorList, friendsList, pagesPrivateReply, timeline, feedOrganicPost */
    FB_FEED_ORGANIC_POST ThreadSourceType = 1572865
@@ -156,4 +155,33 @@ type ReactionStyle int64
 const (
    UNKNOWN_REACTION_STYLE ReactionStyle = 0
    BASIC_SUPER_REACT_ANIMATION ReactionStyle = 1
+)
+
+type ThreadType int64
+const (
+   UNKNOWN_THREAD_TYPE ThreadType = 0
+   ONE_TO_ONE ThreadType = 1
+   GROUP_THREAD ThreadType = 2
+   ROOM ThreadType = 3
+   MONTAGE ThreadType = 4
+   MARKETPLACE ThreadType = 5
+   FOLDER ThreadType = 6
+   ENCRYPTED_ONE_TO_ONE ThreadType = 7
+   ENCRYPTED_GROUP_DISAPPEARING ThreadType = 8
+   CARRIER_MESSAGING_ONE_TO_ONE ThreadType = 10
+   CARRIER_MESSAGING_GROUP ThreadType = 11
+   ENCRYPTED_ONE_TO_ONE_DISAPPEARING ThreadType = 13
+   ENCRYPTED_OVER_WA_ONE_TO_ONE ThreadType = 15
+   ENCRYPTED_OVER_WA_GROUP ThreadType = 16
+   COMMUNITY_GROUP ThreadType = 18
+)
+
+type FolderType int64
+const (
+   INBOX FolderType = 0
+   PENDING FolderType = 1
+   OTHER FolderType = 2
+   SPAM FolderType = 3
+   ARCHIVED FolderType = 4
+   HIDDEN FolderType = 5
 )
