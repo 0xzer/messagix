@@ -185,3 +185,11 @@ const (
    ARCHIVED FolderType = 4
    HIDDEN FolderType = 5
 )
+
+type ThreadBumpStatus int64
+const (
+   UNKNOWN_BUMP_STATUS ThreadBumpStatus = 0
+   ACTIVITY_AND_READ ThreadBumpStatus = 1
+   ACTIVITY ThreadBumpStatus = 2
+   ACTIVITY_AND_READ_2 ThreadBumpStatus = 3
+)

@@ -201,10 +201,58 @@ type LSVerifyThreadExists struct {
     AuthorityLevel int64 `index:"4"`
 }
 
+func (lsui *LSVerifyThreadExists) GetThreadKey() int64 {
+    return lsui.ThreadKey
+}
+
+func (lsui *LSVerifyThreadExists) GetThreadName() string {
+    return ""
+}
+
+func (lsui *LSVerifyThreadExists) GetThreadType() ThreadType {
+    return lsui.ThreadType
+}
+
+func (lsui *LSVerifyThreadExists) GetLastReadWatermarkTimestampMs() int64 {
+    return 0
+}
+
+func (lsui *LSVerifyThreadExists) GetThreadDescription() string {
+    return ""
+}
+
+func (lsui *LSVerifyThreadExists) GetFolderName() string {
+    return lsui.FolderName
+}
+
 type LSBumpThread struct {
     LastReadWatermarkTimestampMs int64 `index:"0"`
-    Unknown1 int64 `index:"1"`
+    BumpStatus ThreadBumpStatus `index:"1"`
     ThreadKey int64 `index:"2"`
+}
+
+func (lsui *LSBumpThread) GetThreadKey() int64 {
+    return lsui.ThreadKey
+}
+
+func (lsui *LSBumpThread) GetThreadName() string {
+    return ""
+}
+
+func (lsui *LSBumpThread) GetThreadType() ThreadType {
+    return 0
+}
+
+func (lsui *LSBumpThread) GetLastReadWatermarkTimestampMs() int64 {
+    return lsui.LastReadWatermarkTimestampMs
+}
+
+func (lsui *LSBumpThread) GetThreadDescription() string {
+    return ""
+}
+
+func (lsui *LSBumpThread) GetFolderName() string {
+    return ""
 }
 
 // Idk which snippet is the correct, there's like 6 (snippet, snippetStringHash, snippetStringArgument1, snippetAttribution, snippetAttributionStringHash)
@@ -326,6 +374,30 @@ type LSDeleteThenInsertIgThreadInfo struct {
 type LSMarkThreadRead struct {
     LastReadWatermarkTimestampMs int64 `index:"0"`
     ThreadKey int64 `index:"1"`
+}
+
+func (lsui *LSMarkThreadRead) GetThreadKey() int64 {
+    return lsui.ThreadKey
+}
+
+func (lsui *LSMarkThreadRead) GetThreadName() string {
+    return ""
+}
+
+func (lsui *LSMarkThreadRead) GetThreadType() ThreadType {
+    return 0
+}
+
+func (lsui *LSMarkThreadRead) GetLastReadWatermarkTimestampMs() int64 {
+    return lsui.LastReadWatermarkTimestampMs
+}
+
+func (lsui *LSMarkThreadRead) GetThreadDescription() string {
+    return ""
+}
+
+func (lsui *LSMarkThreadRead) GetFolderName() string {
+    return ""
 }
 
 type LSUpdateParentFolderReadWatermark struct {

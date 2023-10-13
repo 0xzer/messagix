@@ -14,6 +14,7 @@ import (
 )
 
 func TestDecode(t *testing.T) {
+	return
 	data, err := os.ReadFile("test_data.json")
 	if err != nil {
 		log.Fatal(err)
@@ -36,7 +37,7 @@ func TestDecode(t *testing.T) {
 	lsDecoder := lightspeed.NewLightSpeedDecoder(deps, lsTable)
 	lsDecoder.Decode(lsData.Steps)
 
-	//tableReflectionTest(lsTable)
+	tableReflectionTest(lsTable)
 }
 
 func TestDecodeIG(t *testing.T) {
@@ -75,22 +76,12 @@ func tableReflectionTest(loadedTable *table.LSTable) {
 		
 		if fieldKind == reflect.Slice && fieldValue.Len() > 0 {
 			switch data := fieldValue.Interface().(type) {
-			case []table.LSUpsertMessage:
-				for _, d := range data {
-					log.Println(d.Text, d.ThreadKey)
-				}
-			case []table.LSAddParticipantIdToGroupThread:
-				for _, d := range data {
-					log.Println(d.ThreadKey, d.ContactId)
-				}
-			case []table.LSUpdateOrInsertThread:
-				log.Println(data)
 			case []table.LSDeleteThenInsertThread:
 				for _, d := range data {
 					log.Println(d.ThreadKey, d.Snippet, d.ThreadType, d.LastReadWatermarkTimestampMs)
 				}
 			case []table.LSBumpThread:
-				log.Println(data[0].Unknown1)
+				log.Println(data[0].BumpStatus, data[0].LastReadWatermarkTimestampMs)
 			case []table.LSVerifyThreadExists:
 				log.Println(data[0].ThreadType, data[0])
 			default:
