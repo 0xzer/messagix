@@ -109,27 +109,27 @@ type LSDeleteThenInsertThread struct {
     PauseThreadTimestamp int64 `index:"82"`
 }
 
-func (lsdt *LSDeleteThenInsertThread) GetThreadKey() int64 {
+func (lsdt LSDeleteThenInsertThread) GetThreadKey() int64 {
     return lsdt.ThreadKey
 }
 
-func (lsdt *LSDeleteThenInsertThread) GetThreadName() string {
+func (lsdt LSDeleteThenInsertThread) GetThreadName() string {
     return lsdt.ThreadName
 }
 
-func (lsdt *LSDeleteThenInsertThread) GetThreadType() ThreadType {
+func (lsdt LSDeleteThenInsertThread) GetThreadType() ThreadType {
     return lsdt.ThreadType
 }
 
-func (lsdt *LSDeleteThenInsertThread) GetLastReadWatermarkTimestampMs() int64 {
+func (lsdt LSDeleteThenInsertThread) GetLastReadWatermarkTimestampMs() int64 {
     return lsdt.LastReadWatermarkTimestampMs
 }
 
-func (lsdt *LSDeleteThenInsertThread) GetThreadDescription() string {
+func (lsdt LSDeleteThenInsertThread) GetThreadDescription() string {
     return lsdt.ThreadDescription
 }
 
-func (lsdt *LSDeleteThenInsertThread) GetFolderName() string {
+func (lsdt LSDeleteThenInsertThread) GetFolderName() string {
     return lsdt.FolderName
 }
 
@@ -201,27 +201,27 @@ type LSVerifyThreadExists struct {
     AuthorityLevel int64 `index:"4"`
 }
 
-func (lsui *LSVerifyThreadExists) GetThreadKey() int64 {
+func (lsui LSVerifyThreadExists) GetThreadKey() int64 {
     return lsui.ThreadKey
 }
 
-func (lsui *LSVerifyThreadExists) GetThreadName() string {
+func (lsui LSVerifyThreadExists) GetThreadName() string {
     return ""
 }
 
-func (lsui *LSVerifyThreadExists) GetThreadType() ThreadType {
+func (lsui LSVerifyThreadExists) GetThreadType() ThreadType {
     return lsui.ThreadType
 }
 
-func (lsui *LSVerifyThreadExists) GetLastReadWatermarkTimestampMs() int64 {
+func (lsui LSVerifyThreadExists) GetLastReadWatermarkTimestampMs() int64 {
     return 0
 }
 
-func (lsui *LSVerifyThreadExists) GetThreadDescription() string {
+func (lsui LSVerifyThreadExists) GetThreadDescription() string {
     return ""
 }
 
-func (lsui *LSVerifyThreadExists) GetFolderName() string {
+func (lsui LSVerifyThreadExists) GetFolderName() string {
     return lsui.FolderName
 }
 
@@ -231,27 +231,27 @@ type LSBumpThread struct {
     ThreadKey int64 `index:"2"`
 }
 
-func (lsui *LSBumpThread) GetThreadKey() int64 {
+func (lsui LSBumpThread) GetThreadKey() int64 {
     return lsui.ThreadKey
 }
 
-func (lsui *LSBumpThread) GetThreadName() string {
+func (lsui LSBumpThread) GetThreadName() string {
     return ""
 }
 
-func (lsui *LSBumpThread) GetThreadType() ThreadType {
+func (lsui LSBumpThread) GetThreadType() ThreadType {
     return 0
 }
 
-func (lsui *LSBumpThread) GetLastReadWatermarkTimestampMs() int64 {
+func (lsui LSBumpThread) GetLastReadWatermarkTimestampMs() int64 {
     return lsui.LastReadWatermarkTimestampMs
 }
 
-func (lsui *LSBumpThread) GetThreadDescription() string {
+func (lsui LSBumpThread) GetThreadDescription() string {
     return ""
 }
 
-func (lsui *LSBumpThread) GetFolderName() string {
+func (lsui LSBumpThread) GetFolderName() string {
     return ""
 }
 
@@ -376,27 +376,27 @@ type LSMarkThreadRead struct {
     ThreadKey int64 `index:"1"`
 }
 
-func (lsui *LSMarkThreadRead) GetThreadKey() int64 {
+func (lsui LSMarkThreadRead) GetThreadKey() int64 {
     return lsui.ThreadKey
 }
 
-func (lsui *LSMarkThreadRead) GetThreadName() string {
+func (lsui LSMarkThreadRead) GetThreadName() string {
     return ""
 }
 
-func (lsui *LSMarkThreadRead) GetThreadType() ThreadType {
+func (lsui LSMarkThreadRead) GetThreadType() ThreadType {
     return 0
 }
 
-func (lsui *LSMarkThreadRead) GetLastReadWatermarkTimestampMs() int64 {
+func (lsui LSMarkThreadRead) GetLastReadWatermarkTimestampMs() int64 {
     return lsui.LastReadWatermarkTimestampMs
 }
 
-func (lsui *LSMarkThreadRead) GetThreadDescription() string {
+func (lsui LSMarkThreadRead) GetThreadDescription() string {
     return ""
 }
 
-func (lsui *LSMarkThreadRead) GetFolderName() string {
+func (lsui LSMarkThreadRead) GetFolderName() string {
     return ""
 }
 
@@ -494,27 +494,27 @@ type LSUpdateOrInsertThread struct {
     Capabilities4 int64 `index:"104"`
 }
 
-func (lsui *LSUpdateOrInsertThread) GetThreadKey() int64 {
+func (lsui LSUpdateOrInsertThread) GetThreadKey() int64 {
     return lsui.ThreadKey
 }
 
-func (lsui *LSUpdateOrInsertThread) GetThreadName() string {
+func (lsui LSUpdateOrInsertThread) GetThreadName() string {
     return lsui.ThreadName
 }
 
-func (lsui *LSUpdateOrInsertThread) GetThreadType() ThreadType {
+func (lsui LSUpdateOrInsertThread) GetThreadType() ThreadType {
     return lsui.ThreadType
 }
 
-func (lsui *LSUpdateOrInsertThread) GetLastReadWatermarkTimestampMs() int64 {
+func (lsui LSUpdateOrInsertThread) GetLastReadWatermarkTimestampMs() int64 {
     return lsui.LastReadWatermarkTimestampMs
 }
 
-func (lsui *LSUpdateOrInsertThread) GetThreadDescription() string {
+func (lsui LSUpdateOrInsertThread) GetThreadDescription() string {
     return lsui.ThreadDescription
 }
 
-func (lsui *LSUpdateOrInsertThread) GetFolderName() string {
+func (lsui LSUpdateOrInsertThread) GetFolderName() string {
     return lsui.FolderName
 }
 
