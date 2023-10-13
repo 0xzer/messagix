@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/0xzer/messagix"
+	"github.com/0xzer/messagix/graphql"
 	"github.com/0xzer/messagix/lightspeed"
 	"github.com/0xzer/messagix/table"
 )
@@ -35,9 +36,35 @@ func TestDecode(t *testing.T) {
 	lsDecoder := lightspeed.NewLightSpeedDecoder(deps, lsTable)
 	lsDecoder.Decode(lsData.Steps)
 
-	tableReflectionTest(lsTable)
+	//tableReflectionTest(lsTable)
 }
 
+func TestDecodeIG(t *testing.T) {
+	data, err := os.ReadFile("test_data_ig.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var queryData *graphql.LSPlatformGraphQLLightspeedRequestForIGDQuery
+	err = json.Unmarshal(data, &queryData)
+	if err != nil {
+		log.Fatalf("failed to parse LightSpeedQLRequest data from html (INSTAGRAM): %e", err)
+	}
+	lsPayloadStr := queryData.Data.LightspeedWebRequestForIgd.Payload
+	deps := queryData.Data.LightspeedWebRequestForIgd.Dependencies
+	var lsData *lightspeed.LightSpeedData
+	err = json.Unmarshal([]byte(lsPayloadStr), &lsData)
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	depsMap := lightspeed.DependenciesToMap(deps)
+	lsTable := &table.LSTable{}
+	lsDecoder := lightspeed.NewLightSpeedDecoder(depsMap, lsTable)
+	lsDecoder.Decode(lsData.Steps)
+
+	tableReflectionTest(lsTable)
+}
 
 func tableReflectionTest(loadedTable *table.LSTable) {
 	values := reflect.ValueOf(loadedTable).Elem()
@@ -48,13 +75,32 @@ func tableReflectionTest(loadedTable *table.LSTable) {
 		
 		if fieldKind == reflect.Slice && fieldValue.Len() > 0 {
 			switch data := fieldValue.Interface().(type) {
+			case []table.LSUpsertMessage:
+				for _, d := range data {
+					log.Println(d.Text, d.ThreadKey)
+				}
+			case []table.LSAddParticipantIdToGroupThread:
+				for _, d := range data {
+					log.Println(d.ThreadKey, d.ContactId)
+				}
 			case []table.LSUpdateOrInsertThread:
 				log.Println(data)
+			case []table.LSDeleteThenInsertThread:
+				for _, d := range data {
+					log.Println(d.ThreadKey, d.Snippet, d.ThreadType, d.LastReadWatermarkTimestampMs)
+				}
 			case []table.LSBumpThread:
 				log.Println(data[0].Unknown1)
 			case []table.LSVerifyThreadExists:
 				log.Println(data[0].ThreadType, data[0])
 			default:
+				log.Println(fieldValue.Type().Elem().String())
+			}
+
+			slice := reflect.ValueOf(fieldValue.Interface())
+			interfaceSlice := make([]interface{}, slice.Len())
+			for i := 0; i < slice.Len(); i++ {
+				interfaceSlice[i] = slice.Index(i).Interface()
 			}
 		}
 	}

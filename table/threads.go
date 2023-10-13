@@ -1,5 +1,14 @@
 package table
 
+type ThreadInfo interface{
+    GetThreadKey() int64
+    GetThreadName() string
+    GetThreadType() ThreadType
+    GetLastReadWatermarkTimestampMs() int64
+    GetThreadDescription() string
+    GetFolderName() string
+}
+
 type LSTruncateMetadataThreads struct {}
 
 type LSUpsertInboxThreadsRange struct {
@@ -79,7 +88,7 @@ type LSDeleteThenInsertThread struct {
     LastMessageCtaId int64 `index:"61"`
     LastMessageCtaType int64 `index:"62"`
     ConsistentThreadFbid int64 `index:"63"`
-    ThreadDescription int64 `index:"64"`
+    ThreadDescription string `index:"64"`
     UnsendLimitMs int64 `index:"65"`
     SyncGroup int64 `index:"66"`
     ThreadInvitesEnabled int64 `index:"67"`
@@ -98,6 +107,30 @@ type LSDeleteThenInsertThread struct {
     ThreadStatus int64 `index:"80"`
     ThreadSubtype int64 `index:"81"`
     PauseThreadTimestamp int64 `index:"82"`
+}
+
+func (lsdt *LSDeleteThenInsertThread) GetThreadKey() int64 {
+    return lsdt.ThreadKey
+}
+
+func (lsdt *LSDeleteThenInsertThread) GetThreadName() string {
+    return lsdt.ThreadName
+}
+
+func (lsdt *LSDeleteThenInsertThread) GetThreadType() ThreadType {
+    return lsdt.ThreadType
+}
+
+func (lsdt *LSDeleteThenInsertThread) GetLastReadWatermarkTimestampMs() int64 {
+    return lsdt.LastReadWatermarkTimestampMs
+}
+
+func (lsdt *LSDeleteThenInsertThread) GetThreadDescription() string {
+    return lsdt.ThreadDescription
+}
+
+func (lsdt *LSDeleteThenInsertThread) GetFolderName() string {
+    return lsdt.FolderName
 }
 
 type LSAddParticipantIdToGroupThread struct {
@@ -363,7 +396,7 @@ type LSUpdateOrInsertThread struct {
     LastMessageCtaType int64 `index:"65"`
     LastMessageCtaTimestampMs int64 `index:"66"`
     ConsistentThreadFbid int64 `index:"67"`
-    ThreadDescription int64 `index:"69"`
+    ThreadDescription string `index:"69"`
     UnsendLimitMs int64 `index:"70"`
     Capabilities2 int64 `index:"78"`
     Capabilities3 int64 `index:"79"`
@@ -387,6 +420,30 @@ type LSUpdateOrInsertThread struct {
     ThreadSubtype int64 `index:"102"`
     PauseThreadTimestamp int64 `index:"103"`
     Capabilities4 int64 `index:"104"`
+}
+
+func (lsui *LSUpdateOrInsertThread) GetThreadKey() int64 {
+    return lsui.ThreadKey
+}
+
+func (lsui *LSUpdateOrInsertThread) GetThreadName() string {
+    return lsui.ThreadName
+}
+
+func (lsui *LSUpdateOrInsertThread) GetThreadType() ThreadType {
+    return lsui.ThreadType
+}
+
+func (lsui *LSUpdateOrInsertThread) GetLastReadWatermarkTimestampMs() int64 {
+    return lsui.LastReadWatermarkTimestampMs
+}
+
+func (lsui *LSUpdateOrInsertThread) GetThreadDescription() string {
+    return lsui.ThreadDescription
+}
+
+func (lsui *LSUpdateOrInsertThread) GetFolderName() string {
+    return lsui.FolderName
 }
 
 type LSSetThreadCannotUnsendReason struct {
