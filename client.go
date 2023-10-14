@@ -275,7 +275,16 @@ func (c *Client) IsAuthenticated() bool {
 	if c.platform == types.Facebook {
 		isAuthenticated = c.configs.browserConfigTable.CurrentUserInitialData.AccountID != "0"
 	} else {
-		isAuthenticated = c.configs.browserConfigTable.XIGSharedData.Native.Config.ViewerID != ""
+		if c.configs.browserConfigTable.XIGSharedData.ConfigData == nil {
+			err := c.configs.browserConfigTable.XIGSharedData.ParseRaw()
+			if err != nil {
+				c.Logger.Err(err).Msg("failed to parse XIGSharedData config table raw data while checking if account is authenticated")
+			} else {
+				isAuthenticated = c.configs.browserConfigTable.XIGSharedData.ConfigData.Config.ViewerID != ""
+			}
+		} else {
+			isAuthenticated = c.configs.browserConfigTable.XIGSharedData.ConfigData.Config.ViewerID != ""
+		}
 	}
 	return isAuthenticated
 }

@@ -3,8 +3,8 @@ package types
 type XIGConfigData struct {
 	Config struct {
 		CsrfToken string `json:"csrf_token,omitempty"`
-		Viewer    any    `json:"viewer,omitempty"`
-		ViewerID  any    `json:"viewerId,omitempty"`
+		Viewer    ViewerData    `json:"viewer,omitempty"`
+		ViewerID  string    `json:"viewerId,omitempty"`
 	} `json:"config,omitempty"`
 	CountryCode  string `json:"country_code,omitempty"`
 	LanguageCode string `json:"language_code,omitempty"`

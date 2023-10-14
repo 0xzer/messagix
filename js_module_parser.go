@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
 	"github.com/0xzer/messagix/cookies"
 	"github.com/0xzer/messagix/methods"
 	"github.com/0xzer/messagix/types"
