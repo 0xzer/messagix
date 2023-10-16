@@ -165,9 +165,10 @@ type Event_Ready struct {
 	IsNewSession   bool
 	ConnectionCode ConnectionCode
 	CurrentUser types.AccountInfo `skip:"1"`
-	Threads []table.LSDeleteThenInsertThread `skip:"1"`
-	Messages []table.LSUpsertMessage `skip:"1"`
-	Contacts []table.LSVerifyContactRowExists `skip:"1"`
+	Table *table.LSTable
+	//Threads []table.LSDeleteThenInsertThread `skip:"1"`
+	//Messages []table.LSUpsertMessage `skip:"1"`
+	//Contacts []table.LSVerifyContactRowExists `skip:"1"`
 }
 
 func (pb *Event_Ready) SetIdentifier(identifier int16) {}
@@ -179,9 +180,10 @@ func (e *Event_Ready) Finish() ResponseData {
 	} else {
 		e.CurrentUser = &e.client.configs.browserConfigTable.PolarisViewer
 	}
-	e.Threads = e.client.configs.accountConfigTable.LSDeleteThenInsertThread
-	e.Messages = e.client.configs.accountConfigTable.LSUpsertMessage
-	e.Contacts = e.client.configs.accountConfigTable.LSVerifyContactRowExists
+	e.Table = e.client.configs.accountConfigTable
+	//e.Threads = e.client.configs.accountConfigTable.LSDeleteThenInsertThread
+	//e.Messages = e.client.configs.accountConfigTable.LSUpsertMessage
+	//e.Contacts = e.client.configs.accountConfigTable.LSVerifyContactRowExists
 	return e
 }
 

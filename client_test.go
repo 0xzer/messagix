@@ -39,6 +39,7 @@ func evHandler(evt interface{}) {
 	switch evtData := evt.(type) {
 		case *messagix.Event_Ready:
 			cli.Logger.Info().
+			Any("table", evtData.Table).
 			Any("connectionCode", evtData.ConnectionCode.ToString()).
 			Any("isNewSession", evtData.IsNewSession).
 			Any("user_id", evtData.CurrentUser.GetUserId()).

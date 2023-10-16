@@ -84,6 +84,10 @@ func tableReflectionTest(loadedTable *table.LSTable) {
 				log.Println(data[0].BumpStatus, data[0].LastReadWatermarkTimestampMs)
 			case []table.LSVerifyThreadExists:
 				log.Println(data[0].ThreadType, data[0])
+			case []table.LSAddParticipantIdToGroupThread:
+				for _, d := range data {
+					log.Println(d.ContactId)
+				}
 			default:
 				log.Println(fieldValue.Type().Elem().String())
 			}
