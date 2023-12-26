@@ -14,10 +14,17 @@ type QueryMetadata struct {
 	SyncChannel 
 }
 
-type SyncGroupsTask struct {
+type KeyStoreData struct {
+	ParentThreadKey int64
+	MinLastActivityTimestampMs int64
+	HasMoreBefore bool
+	MinThreadKey int64
+}
+
+type FetchThreadsTask struct {
 	IsAfter                    int    `json:"is_after"`
-	ParentThreadKey            int    `json:"parent_thread_key"`
-	ReferenceThreadKey         int    `json:"reference_thread_key"`
+	ParentThreadKey            int64    `json:"parent_thread_key"`
+	ReferenceThreadKey         int64    `json:"reference_thread_key"`
 	ReferenceActivityTimestamp int64  `json:"reference_activity_timestamp"`
 	AdditionalPagesToFetch     int    `json:"additional_pages_to_fetch"`
 	Cursor                     interface{} `json:"cursor"`
@@ -25,11 +32,11 @@ type SyncGroupsTask struct {
 	SyncGroup                  int    `json:"sync_group"`
 }
 
-func (t *SyncGroupsTask) GetLabel() string {
-	return TaskLabels["SyncGroupsTask"]
+func (t *FetchThreadsTask) GetLabel() string {
+	return TaskLabels["FetchThreadsTask"]
 }
 
-func (t *SyncGroupsTask) Create() (interface{}, interface{}, bool) {
+func (t *FetchThreadsTask) Create() (interface{}, interface{}, bool) {
 	queueName := "trq"
 	return t, queueName, false
 }

@@ -14,7 +14,6 @@ import (
 )
 
 func TestDecode(t *testing.T) {
-	return
 	data, err := os.ReadFile("test_data.json")
 	if err != nil {
 		log.Fatal(err)
@@ -32,7 +31,7 @@ func TestDecode(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	lsTable := &table.LSTable{}
 	lsDecoder := lightspeed.NewLightSpeedDecoder(deps, lsTable)
 	lsDecoder.Decode(lsData.Steps)
@@ -58,7 +57,7 @@ func TestDecodeIG(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	depsMap := lightspeed.DependenciesToMap(deps)
 	lsTable := &table.LSTable{}
 	lsDecoder := lightspeed.NewLightSpeedDecoder(depsMap, lsTable)
@@ -69,22 +68,23 @@ func TestDecodeIG(t *testing.T) {
 
 func tableReflectionTest(loadedTable *table.LSTable) {
 	values := reflect.ValueOf(loadedTable).Elem()
-
 	for i := 0; i < values.NumField(); i++ {
 		fieldValue := values.Field(i)
 		fieldKind := fieldValue.Kind()
-		
 		if fieldKind == reflect.Slice && fieldValue.Len() > 0 {
 			switch data := fieldValue.Interface().(type) {
 			case []table.LSDeleteThenInsertThread:
 				for _, d := range data {
+					log.Println(data)
 					log.Println(d.ThreadKey, d.Snippet, d.ThreadType, d.LastReadWatermarkTimestampMs)
 				}
+			case []table.LSDeleteThenInsertIGContactInfo:
+				log.Println(data[0])
 			case []table.LSBumpThread:
-				log.Println(data[0].BumpStatus, data[0].LastReadWatermarkTimestampMs)
+				log.Println(data[0].BumpStatus, data[0].LastReadWatermarkTimestampMs, data[0])
 			case []table.LSVerifyThreadExists:
-				log.Println(data[0].ThreadType, data[0])
-			case []table.LSAddParticipantIdToGroupThread:
+				log.Println(data[0].ThreadType, data[0], data[0].ThreadKey, data[0])
+			case []table.LSVerifyContactRowExists:
 				for _, d := range data {
 					log.Println(d.ContactId)
 				}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-
 	"github.com/0xzer/messagix/byter"
 	"github.com/0xzer/messagix/packets"
 )

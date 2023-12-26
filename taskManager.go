@@ -70,8 +70,5 @@ func (tm *TaskManager) AddNewTask(task socket.Task) {
 }
 
 func (tm *TaskManager) GetTaskId() int64 {
-	if len(tm.currTasks) == 0 {
-		return 0
-	}
-	return int64(len(tm.currTasks))
+	return int64(tm.client.GetTaskId())
 }

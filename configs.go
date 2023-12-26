@@ -2,7 +2,9 @@ package messagix
 
 import (
 	"fmt"
+	"log"
 	"reflect"
+
 	"github.com/0xzer/messagix/crypto"
 	"github.com/0xzer/messagix/methods"
 	"github.com/0xzer/messagix/socket"
@@ -38,9 +40,9 @@ func (c *Configs) SetupConfigs() error {
 		} else {
 			c.client.socket.broker = c.browserConfigTable.MqttWebConfig.Endpoint
 		}
-		c.client.syncManager.syncParams = &c.browserConfigTable.LSPlatformMessengerSyncParams
+		c.client.SyncManager.syncParams = &c.browserConfigTable.LSPlatformMessengerSyncParams
 		if c.needSync {
-			err := c.client.syncManager.UpdateDatabaseSyncParams(
+			err := c.client.SyncManager.UpdateDatabaseSyncParams(
 				[]*socket.QueryMetadata{
 					{DatabaseId: 1, SendSyncParams: true, LastAppliedCursor: nil, SyncChannel: socket.MailBox},
 					{DatabaseId: 2, SendSyncParams: true, LastAppliedCursor: nil, SyncChannel: socket.Contact},
@@ -51,7 +53,7 @@ func (c *Configs) SetupConfigs() error {
 				return fmt.Errorf("failed to update sync params for databases: 1, 2, 95")
 			}
 
-			lsData, err := c.client.syncManager.SyncDataGraphQL([]int64{1,2,95})
+			lsData, err := c.client.SyncManager.SyncDataGraphQL([]int64{1,2,95})
 			if err != nil {
 				return fmt.Errorf("failed to sync data via graphql for databases: 1, 2, 95")
 			}
@@ -59,10 +61,11 @@ func (c *Configs) SetupConfigs() error {
 			//c.client.Logger.Info().Any("lsData", lsData).Msg("Synced data through graphql query")
 			c.accountConfigTable = lsData
 		} else {
-			err := c.client.syncManager.SyncTransactions(c.accountConfigTable.LSExecuteFirstBlockForSyncTransaction)
+			err := c.client.SyncManager.SyncTransactions(c.accountConfigTable.LSExecuteFirstBlockForSyncTransaction)
 			if err != nil {
 				return fmt.Errorf("failed to sync transactions from js module data with syncManager: %e", err)
 			}
+			log.Println("hi")
 		}
 		c.client.Logger.Info().Any("value", c.Bitmap.CompressedStr).Msg("Loaded __dyn bitmap")
 		c.client.Logger.Info().Any("value", c.CsrBitmap.CompressedStr).Msg("Loaded __csr bitmap")

@@ -160,8 +160,8 @@ type LSInsertBlobAttachment struct {
     PreviewWidth int64 `index:"14"`
     PreviewHeight int64 `index:"15"`
     AttributionAppId int64 `index:"16"`
-    AttributionAppName int64 `index:"17"`
-    AttributionAppIcon int64 `index:"18"`
+    AttributionAppName string `index:"17"`
+    AttributionAppIcon string `index:"18"`
     AttributionAppIconFallback int64 `index:"19"`
     AttributionAppIconUrlExpirationTimestampMs int64 `index:"20"`
     LocalPlayableUrl int64 `index:"21"`

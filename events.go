@@ -3,8 +3,8 @@ package messagix
 import (
 	"encoding/json"
 	"log"
-
 	"github.com/0xzer/messagix/lightspeed"
+	"github.com/0xzer/messagix/methods"
 	"github.com/0xzer/messagix/packets"
 	"github.com/0xzer/messagix/socket"
 	"github.com/0xzer/messagix/table"
@@ -66,16 +66,16 @@ func (s *Socket) handleReadyEvent(data *Event_Ready) {
 
 	
 	tskm := s.client.NewTaskManager()
-	tskm.AddNewTask(&socket.SyncGroupsTask{
+	tskm.AddNewTask(&socket.FetchThreadsTask{
 		IsAfter: 0,
 		ParentThreadKey: -1,
 		ReferenceThreadKey: 0,
 		ReferenceActivityTimestamp: 9999999999999,
 		AdditionalPagesToFetch: 0,
-		Cursor: s.client.syncManager.getCursor(1),
+		Cursor: s.client.SyncManager.GetCursor(1),
 		SyncGroup: 1,
 	})
-	tskm.AddNewTask(&socket.SyncGroupsTask{
+	tskm.AddNewTask(&socket.FetchThreadsTask{
 		IsAfter: 0,
 		ParentThreadKey: -1,
 		ReferenceThreadKey: 0,
@@ -84,11 +84,34 @@ func (s *Socket) handleReadyEvent(data *Event_Ready) {
 		SyncGroup: 95,
 	})
 
+	syncGroupKeyStore1 := s.client.SyncManager.getSyncGroupKeyStore(1)
+	if syncGroupKeyStore1 != nil {
+		//  syncGroupKeyStore95 := s.client.SyncManager.getSyncGroupKeyStore(95)
+		tskm.AddNewTask(&socket.FetchThreadsTask{
+			IsAfter: 0,
+			ParentThreadKey: syncGroupKeyStore1.ParentThreadKey,
+			ReferenceThreadKey: syncGroupKeyStore1.MinThreadKey,
+			ReferenceActivityTimestamp: syncGroupKeyStore1.MinLastActivityTimestampMs,
+			AdditionalPagesToFetch: 0,
+			Cursor: s.client.SyncManager.GetCursor(1),
+			SyncGroup: 1,
+		})
+		tskm.AddNewTask(&socket.FetchThreadsTask{
+			IsAfter: 0,
+			ParentThreadKey: syncGroupKeyStore1.ParentThreadKey,
+			ReferenceThreadKey: syncGroupKeyStore1.MinThreadKey,
+			ReferenceActivityTimestamp: syncGroupKeyStore1.MinLastActivityTimestampMs,
+			AdditionalPagesToFetch: 0,
+			SyncGroup: 95,
+		})
+	}
+
 	payload, err := tskm.FinalizePayload()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	s.client.Logger.Debug().Any("data", string(payload)).Msg("Sync groups tasks")
 	packetId, err = s.makeLSRequest(payload, 3)
 	if err != nil {
 		log.Fatal(err)
@@ -99,12 +122,15 @@ func (s *Socket) handleReadyEvent(data *Event_Ready) {
 		log.Fatalf("failed to receive response from task 145 request")
 	}
 
+	s.client.Logger.Info().Any("syncgroup", resp.Table.LSUpsertSyncGroupThreadsRange).Any("threads", resp.Table.LSDeleteThenInsertThread).Msg("145 RESP.")
+
 	err = s.client.Account.ReportAppState(table.FOREGROUND)
 	if err != nil {
 		log.Fatalf("failed to report app state to foreground (active): %e", err)
 	}
 
-	err = s.client.syncManager.EnsureSyncedSocket([]int64{
+	
+	err = s.client.SyncManager.EnsureSyncedSocket([]int64{
 		1,
 	})
 
@@ -134,6 +160,7 @@ func (s *Socket) handleErrorEvent(err error) {
 func (s *Socket) handlePublishResponseEvent(resp *Event_PublishResponse) {
 	packetId := resp.Data.RequestID
 	hasPacket := s.responseHandler.hasPacket(uint16(packetId))
+	// s.client.Logger.Debug().Any("packetId", packetId).Any("resp", resp).Msg("got response!")
 	switch resp.Topic {
 		case string(LS_RESP):
 			resp.Finish()
@@ -145,10 +172,22 @@ func (s *Socket) handlePublishResponseEvent(resp *Event_PublishResponse) {
 				}
 				return
 			} else if packetId == 0 {
+				syncGroupsNeedUpdate := methods.NeedUpdateSyncGroups(resp.Table)
+				if syncGroupsNeedUpdate {
+					s.client.Logger.Debug().
+					Any("LSExecuteFirstBlockForSyncTransaction", resp.Table.LSExecuteFirstBlockForSyncTransaction).
+					Any("LSUpsertSyncGroupThreadsRange", resp.Table.LSUpsertSyncGroupThreadsRange).
+					Msg("Updating sync groups")
+					//err := s.client.SyncManager.SyncTransactions(transactions)
+					err := s.client.SyncManager.updateSyncGroupCursors(resp.Table)
+					if err != nil {
+						s.client.Logger.Err(err).Msg("Failed to sync transactions from publish response event")
+					}
+				}
 				s.client.eventHandler(resp)
 				return
 			}
-			s.client.Logger.Info().Any("packetId", packetId).Any("data", resp).Msg("Got publish response but was not expecting it for specific packet identifier.")
+			// s.client.Logger.Info().Any("packetId", packetId).Any("data", resp).Msg("Got publish response but was not expecting it for specific packet identifier.")
 		default:
 			s.client.Logger.Info().Any("packetId", packetId).Any("topic", resp.Topic).Any("data", resp.Data).Msg("Got unknown publish response topic!")
 	}

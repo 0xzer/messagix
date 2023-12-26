@@ -109,7 +109,7 @@ func (s *Socket) BuildBrokerUrl() (string, error) {
 	
 	encodedQuery := query.Encode()
 	if !strings.HasSuffix(s.broker, "=") {
-		return s.broker + encodedQuery, nil
+		return s.broker + "&" + encodedQuery, nil
 	} else {
 		return s.broker + "&" + encodedQuery, nil
 	}

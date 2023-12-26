@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
 	"github.com/0xzer/messagix/cookies"
 	"github.com/0xzer/messagix/methods"
 	"github.com/0xzer/messagix/types"
@@ -84,6 +86,7 @@ func (m *ModuleParser) Load(page string) error {
 	var err error
 	if m.testData == nil {
 		htmlData, err = m.fetchPageData(page)
+		os.WriteFile("test_files/res.html", htmlData, os.ModePerm)
 		if err != nil {
 			return err
 		}

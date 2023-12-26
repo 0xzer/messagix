@@ -10,6 +10,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"sync"
 
 	"github.com/0xzer/messagix/cookies"
 	"github.com/0xzer/messagix/crypto"
@@ -18,6 +19,7 @@ import (
 	"github.com/0xzer/messagix/types"
 	"github.com/google/go-querystring/query"
 	"github.com/rs/zerolog"
+	"golang.org/x/exp/slices"
 )
 
 var USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
@@ -36,7 +38,7 @@ type Client struct {
 	socket *Socket
 	eventHandler EventHandler
 	configs *Configs
-	syncManager *SyncManager
+	SyncManager *SyncManager
 
 	cookies cookies.Cookies
 	proxy func(*http.Request) (*url.URL, error)
@@ -45,6 +47,8 @@ type Client struct {
 	graphQLRequests int
 	platform types.Platform
 	endpoints map[string]string
+	taskMutex *sync.Mutex
+	activeTasks []int
 }
 
 // pass an empty zerolog.Logger{} for no logging
@@ -58,6 +62,8 @@ func NewClient(platform types.Platform, cookies cookies.Cookies, logger zerolog.
 		lsRequests: 0,
 		graphQLRequests: 1,
 		platform: platform,
+		activeTasks: make([]int, 0),
+		taskMutex: &sync.Mutex{},
 	}
 
 	cli.Account = &Account{client: cli}
@@ -104,7 +110,7 @@ func (c *Client) configureAfterLogin() error {
 		return err
 	}
 
-	c.syncManager = c.NewSyncManager()
+	c.SyncManager = c.NewSyncManager()
 	err = c.configs.SetupConfigs()
 	if err != nil {
 		return fmt.Errorf("messagix-configs: failed to setup configs (%e)", err)
@@ -275,16 +281,8 @@ func (c *Client) IsAuthenticated() bool {
 	if c.platform == types.Facebook {
 		isAuthenticated = c.configs.browserConfigTable.CurrentUserInitialData.AccountID != "0"
 	} else {
-		if c.configs.browserConfigTable.XIGSharedData.ConfigData == nil {
-			err := c.configs.browserConfigTable.XIGSharedData.ParseRaw()
-			if err != nil {
-				c.Logger.Err(err).Msg("failed to parse XIGSharedData config table raw data while checking if account is authenticated")
-			} else {
-				isAuthenticated = c.configs.browserConfigTable.XIGSharedData.ConfigData.Config.ViewerID != ""
-			}
-		} else {
-			isAuthenticated = c.configs.browserConfigTable.XIGSharedData.ConfigData.Config.ViewerID != ""
-		}
+		c.Logger.Info().Any("data", c.configs.browserConfigTable.PolarisViewer).Msg("PolarisViewer")
+		isAuthenticated = c.configs.browserConfigTable.PolarisViewer.ID != ""
 	}
 	return isAuthenticated
 }
@@ -309,4 +307,16 @@ func (c *Client) GetCurrentAccount() (types.AccountInfo, error) {
 	} else {
 		return &c.configs.browserConfigTable.PolarisViewer, nil
 	}
+}
+
+func (c *Client) GetTaskId() int {
+	c.taskMutex.Lock()
+	defer c.taskMutex.Unlock()
+	id := 0
+	for slices.Contains[[]int, int](c.activeTasks, id) {
+		id++
+	}
+
+	c.activeTasks = append(c.activeTasks, id)
+	return id
 }

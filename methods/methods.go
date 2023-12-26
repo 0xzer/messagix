@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/0xzer/messagix/table"
 	"github.com/google/uuid"
 )
 
@@ -98,4 +99,9 @@ func InterfaceToStructJSON(data interface{}, i interface{}) error {
 	}
 
 	return json.Unmarshal(b, &i)
+}
+
+func NeedUpdateSyncGroups(data table.LSTable) bool {
+	return len(data.LSExecuteFirstBlockForSyncTransaction) > 0 ||
+	len(data.LSUpsertSyncGroupThreadsRange) > 0
 }

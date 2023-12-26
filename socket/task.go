@@ -10,7 +10,7 @@ var TaskLabels = map[string]string{
 	"ThreadMarkRead": "21",
 	"GetContactsFullTask": "207",
 	"ReportAppStateTask": "123",
-	"SyncGroupsTask": "145",
+	"FetchThreadsTask": "145",
 	"FetchMessagesTask": "228",
 	"SendReactionTask": "29",
 	"DeleteMessageTask": "33",
